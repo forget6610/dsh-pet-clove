@@ -1,0 +1,7 @@
+# 个人素材不放仓库
+assets/pet.png
+assets/pet-source.png
+
+node_modules/
+*.log
+.DS_Store

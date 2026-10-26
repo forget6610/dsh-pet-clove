@@ -1,0 +1,9 @@
+# 插件行清单。安装进 profile 后由 bundle 层读取并挂载。
+#   id   任意，仅用于在 cordis 树里标识这一行
+#   name 必须等于 package.json 的 name
+#
+# 宿主半区 = 包 main（host.js）：桌宠图片路由
+# 浏览器半区 = ./client 导出（client.js）：桌宠行为与交互
+- insert:
+    - id: clove-pet
+      name: dsh-pet-clove
