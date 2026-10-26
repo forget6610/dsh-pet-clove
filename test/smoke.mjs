@@ -198,7 +198,7 @@ const acts = nodes.filter((n) => n.classList.contains('pet-act'));
 const fx = nodes.find((n) => n.classList.contains('pet-fx'));
 assert.ok(img && bubble && glow && btn && fx, 'incomplete pet DOM');
 assert.equal(img.attrs['src'], '/dsh-clove-pet/pet.png', 'wrong pet image path');
-assert.equal(acts.length, 3, 'expected three hover buttons');
+assert.equal(acts.length, 4, 'expected four hover buttons');
 
 // position restored from storage, inside the viewport
 const petW = 120;
@@ -256,6 +256,21 @@ for (let i = 0; i < 200 && rafs.size > 0; i++) {
   frames.forEach((fn) => fn(stamp));
 }
 assert.ok(!pet.classList.contains('is-flying'), 'flight did not finish');
+
+// pin: freezes the wander behaviour and remembers the choice
+const pinBtn = acts.find((n) => n.classList.contains('pet-act-pin'));
+assert.ok(pinBtn, 'missing pin button');
+assert.ok(plugin._debug.css.includes('.pet-act.is-active'), 'pin active style missing');
+pinBtn.dispatch('click', { stopPropagation() {} });
+assert.equal(store.get('dsh-clove-pet:pinned:v1'), '1', 'pin state not persisted');
+assert.ok(pinBtn.classList.contains('is-active'), 'pin button not highlighted');
+assert.equal(pinBtn.attrs['aria-pressed'], 'true', 'aria-pressed not set');
+assert.ok(pinBtn.attrs['title'].includes('固定'), 'pin title not updated');
+flyBtn.dispatch('click', { stopPropagation() {} });
+assert.ok(!pet.classList.contains('is-flying'), 'pinned pet still flew away');
+pinBtn.dispatch('click', { stopPropagation() {} });
+assert.equal(store.get('dsh-clove-pet:pinned:v1'), '0', 'unpin state not persisted');
+assert.ok(!pinBtn.classList.contains('is-active'), 'pin highlight not removed');
 
 // dragging follows the pointer, release glides with inertia
 btn.dispatch('pointerdown', {

@@ -14,6 +14,7 @@ window.__ModuleLoader__.load({
     var PET_SRC = '/dsh-clove-pet/pet.png';
     var STORE_POS = 'dsh-clove-pet:pos:v2';
     var STORE_AFF = 'dsh-clove-pet:affinity:v1';
+    var STORE_PIN = 'dsh-clove-pet:pinned:v1';
     var DEFAULT_SIZE = 150;
     var MARGIN = 8;
     var FRICTION = 2.6;
@@ -215,6 +216,7 @@ window.__ModuleLoader__.load({
   -webkit-tap-highlight-color: transparent;
 }
 .dsh-clove-pet .pet-act:hover { background: rgba(244, 114, 182, 0.32); }
+.dsh-clove-pet .pet-act.is-active { background: rgba(244, 114, 182, 0.42); border-color: rgba(249, 168, 212, 0.85); box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.22), 0 4px 14px rgba(0, 0, 0, 0.4); }
 
 .dsh-clove-pet .pet-fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .dsh-clove-pet .pet-fx-item {
@@ -327,6 +329,12 @@ window.__ModuleLoader__.load({
       flyBtn.setAttribute('title', '飞一下');
       flyBtn.textContent = '✦';
 
+      var pinBtn = document.createElement('button');
+      pinBtn.className = 'pet-act pet-act-pin';
+      pinBtn.setAttribute('type', 'button');
+      pinBtn.setAttribute('title', '固定在这个位置');
+      pinBtn.textContent = '📌';
+
       var sleepBtn = document.createElement('button');
       sleepBtn.className = 'pet-act pet-act-sleep';
       sleepBtn.setAttribute('type', 'button');
@@ -352,6 +360,7 @@ window.__ModuleLoader__.load({
       button.appendChild(body);
       actions.appendChild(heartBtn);
       actions.appendChild(flyBtn);
+      actions.appendChild(pinBtn);
       actions.appendChild(sleepBtn);
       host.appendChild(glow);
       host.appendChild(fx);
@@ -376,6 +385,7 @@ window.__ModuleLoader__.load({
         facing: 1,
         mode: 'idle',
         sleeping: false,
+        pinned: false,
         affinity: 0,
         silent: 0,
       };
@@ -466,7 +476,7 @@ window.__ModuleLoader__.load({
       }
 
       function flyTo(tx, ty, duration) {
-        if (state.sleeping) return;
+        if (state.sleeping || state.pinned) return;
         stopMotion();
         state.mode = 'fly';
         host.classList.add('is-flying');
@@ -551,6 +561,32 @@ window.__ModuleLoader__.load({
           return;
         }
         var roll = Math.random();
+        if (state.pinned) {
+          // 固定模式：只在原地做小动作，绝不自己换位置
+          if (roll < 0.3) {
+            showBubble(pickLine(LINES.lonely), 3200);
+          } else if (roll < 0.42) {
+            spin();
+          } else if (roll < 0.54) {
+            replay('is-happy', 760);
+          }
+          scheduleIdle(rand(4500, 8500));
+          return;
+        }
+        if (state.silent >= 4) {
+          // 没人理的时候慢慢安静下来，不要一直满窗口飞
+          if (roll < 0.22) {
+            flyTo(rand(MARGIN, maxX()), rand(MARGIN, maxY()));
+          } else if (roll < 0.36) {
+            showBubble(pickLine(LINES.lonely), 3200);
+          } else if (roll < 0.46) {
+            spin();
+          } else if (roll < 0.56) {
+            replay('is-happy', 760);
+          }
+          scheduleIdle(rand(4500, 8500));
+          return;
+        }
         if (roll < 0.5) {
           flyTo(rand(MARGIN, maxX()), rand(MARGIN, maxY()));
         } else if (roll < 0.62) {
@@ -644,6 +680,34 @@ window.__ModuleLoader__.load({
         else sleep();
       }
 
+      function syncPinButton() {
+        pinBtn.textContent = state.pinned ? '📍' : '📌';
+        pinBtn.setAttribute('aria-pressed', state.pinned ? 'true' : 'false');
+        pinBtn.setAttribute('title', state.pinned ? '固定中：点一下恢复自由' : '固定在这个位置');
+        if (state.pinned) pinBtn.classList.add('is-active');
+        else pinBtn.classList.remove('is-active');
+      }
+
+      function togglePin() {
+        if (state.sleeping) wakeUp();
+        state.pinned = !state.pinned;
+        state.silent = 0;
+        storage.set(STORE_PIN, state.pinned ? '1' : '0');
+        persistPos();
+        syncPinButton();
+        if (state.pinned) {
+          stopMotion();
+          state.mode = 'idle';
+          host.classList.remove('is-flying');
+          host.style.setProperty('--pet-tilt', '0deg');
+          showBubble('钉住了，我就在这儿。');
+          scheduleIdle(rand(4500, 8000));
+        } else {
+          showBubble('好，随便逛逛。');
+          scheduleIdle(rand(1800, 3200));
+        }
+      }
+
       function greetingPool() {
         var hour = new Date().getHours();
         if (hour < 6) return LINES.hello.night;
@@ -657,6 +721,7 @@ window.__ModuleLoader__.load({
       // restore saved position / affinity
       var saved = storage.get(STORE_POS);
       var savedAffinity = parseInt(storage.get(STORE_AFF) || '0', 10);
+      state.pinned = storage.get(STORE_PIN) === '1';
       var startX = maxX() - 20;
       var startY = clamp(window.innerHeight * 0.58, MARGIN, maxY());
       if (saved) {
@@ -671,6 +736,7 @@ window.__ModuleLoader__.load({
       state.affinity = Number.isFinite(savedAffinity) && savedAffinity > 0 ? savedAffinity : 0;
       applyPos();
       applyFacing();
+      syncPinButton();
 
       function pointerOffset(event) {
         return { dx: (event.clientX || 0) - state.x, dy: (event.clientY || 0) - state.y };
@@ -765,6 +831,11 @@ window.__ModuleLoader__.load({
         later(function () { host.classList.remove('is-hover'); }, 260);
       }
 
+      function onPinClick(event) {
+        if (event && event.stopPropagation) event.stopPropagation();
+        togglePin();
+      }
+
       function onResize() {
         petW = host.offsetWidth || petW;
         petH = Math.round(petW * 1.02);
@@ -782,9 +853,11 @@ window.__ModuleLoader__.load({
       button.addEventListener('pointerleave', hideHover);
       heartBtn.addEventListener('pointerenter', showHover);
       flyBtn.addEventListener('pointerenter', showHover);
+      pinBtn.addEventListener('pointerenter', showHover);
       sleepBtn.addEventListener('pointerenter', showHover);
       heartBtn.addEventListener('pointerleave', hideHover);
       flyBtn.addEventListener('pointerleave', hideHover);
+      pinBtn.addEventListener('pointerleave', hideHover);
       sleepBtn.addEventListener('pointerleave', hideHover);
       heartBtn.addEventListener('click', function (event) {
         if (event && event.stopPropagation) event.stopPropagation();
@@ -793,9 +866,14 @@ window.__ModuleLoader__.load({
       flyBtn.addEventListener('click', function (event) {
         if (event && event.stopPropagation) event.stopPropagation();
         if (state.sleeping) wakeUp();
+        if (state.pinned) {
+          showBubble('被钉住了，飞不动。');
+          return;
+        }
         flyTo(rand(MARGIN, maxX()), rand(MARGIN, maxY()));
         showBubble(pickLine(LINES.walkAway), 1800);
       });
+      pinBtn.addEventListener('click', onPinClick);
       sleepBtn.addEventListener('click', function (event) {
         if (event && event.stopPropagation) event.stopPropagation();
         toggleSleep();
@@ -805,7 +883,9 @@ window.__ModuleLoader__.load({
       // fly in from the right edge, then say hi
       introTimer = later(function () {
         if (state.sleeping) return;
-        flyTo(clamp(window.innerWidth * 0.62, MARGIN, maxX()), clamp(window.innerHeight * 0.46, MARGIN, maxY()), 1600);
+        if (!state.pinned) {
+          flyTo(clamp(window.innerWidth * 0.62, MARGIN, maxX()), clamp(window.innerHeight * 0.46, MARGIN, maxY()), 1600);
+        }
         later(function () {
           if (state.affinity === 0) showBubble(LINES.firstMeet[0], 4200);
           else showBubble(pickLine(greetingPool()), 4200);
@@ -828,6 +908,9 @@ window.__ModuleLoader__.load({
         button.removeEventListener('contextmenu', onContextMenu);
         button.removeEventListener('pointerenter', showHover);
         button.removeEventListener('pointerleave', hideHover);
+        pinBtn.removeEventListener('pointerenter', showHover);
+        pinBtn.removeEventListener('pointerleave', hideHover);
+        pinBtn.removeEventListener('click', onPinClick);
         window.removeEventListener('resize', onResize);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
