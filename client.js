@@ -367,6 +367,7 @@ window.__ModuleLoader__.load({
 .dsh-clove-panel .pet-panel-section { margin-top: 10px; }
 .dsh-clove-panel .pet-panel-hint { color: #B8A5D0; font-size: 11px; line-height: 1.6; margin-top: 6px; }
 .dsh-clove-panel .pet-panel-note { color: #F9A8D4; font-size: 11.5px; margin-top: 8px; }
+.dsh-clove-panel .pet-quick-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 
 .dsh-clove-panel .pet-level-line { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
 .dsh-clove-panel .pet-level { font-weight: 700; color: #FDE68A; }
@@ -507,8 +508,8 @@ window.__ModuleLoader__.load({
       var button = document.createElement('button');
       button.className = 'pet-btn';
       button.setAttribute('type', 'button');
-      button.setAttribute('title', '暮蝶桌宠：拖我、点我、双击我');
-      button.setAttribute('aria-label', '暮蝶桌宠，拖我或者点我');
+      button.setAttribute('title', '暮蝶桌宠：点我打开面板，拖我换位置');
+      button.setAttribute('aria-label', '暮蝶桌宠，点我打开日常面板');
 
       var body = document.createElement('div');
       body.className = 'pet-body';
@@ -889,6 +890,16 @@ window.__ModuleLoader__.load({
         return row;
       }
 
+      function quickAction(label, handler) {
+        var btn = el('button', 'pet-btn-small', label);
+        btn.setAttribute('type', 'button');
+        btn.addEventListener('click', function (event) {
+          if (event && event.stopPropagation) event.stopPropagation();
+          handler();
+        });
+        return btn;
+      }
+
       function renderStatus(body) {
         var level = levelFromXp(care.xp);
         var curXp = care.xp - xpForLevel(level);
@@ -915,6 +926,30 @@ window.__ModuleLoader__.load({
           row.appendChild(makeBar(stat.cls, stat.value));
           body.appendChild(row);
         }
+
+        body.appendChild(el('div', 'pet-panel-section', '快捷操作'));
+        var quick = el('div', 'pet-quick-row');
+        quick.appendChild(quickAction('摸摸', function () {
+          petMe();
+          renderPanel();
+        }));
+        quick.appendChild(quickAction('飞一下', function () {
+          if (state.pinned) showBubble('被钉住了，飞不动。');
+          else {
+            flyTo(rand(MARGIN, maxX()), rand(MARGIN, maxY()));
+            showBubble(pickLine(LINES.walkAway), 1800);
+          }
+          renderPanel();
+        }));
+        quick.appendChild(quickAction(state.pinned ? '恢复自由' : '固定', function () {
+          togglePin();
+          renderPanel();
+        }));
+        quick.appendChild(quickAction(state.sleeping ? '叫醒' : '睡觉', function () {
+          toggleSleep();
+          renderPanel();
+        }));
+        body.appendChild(quick);
 
         body.appendChild(el('div', 'pet-panel-section', '背包'));
         var usedBag = false;
@@ -1414,7 +1449,7 @@ window.__ModuleLoader__.load({
       function onClick(event) {
         if (justDragged) return;
         if (event && event.detail > 1) return;
-        petMe();
+        togglePanel();
       }
 
       function onDoubleClick(event) {
