@@ -20,13 +20,18 @@ DeepSeek Harness Web GUI 的桌面宠物插件：一只会走动、会被你拖�
 
 ## 安装
 
+命令行版（`dsh web`）：
+
 ```
-dsh plugin --profile web-desktop add github:<你的用户名>/dsh-pet-clove
+dsh plugin --profile web add github:forget6610/dsh-pet-clove
+dsh web
 ```
 
-本地开发就 clone 后 `dsh plugin --profile web-desktop add link:<路径>`。装完重启客户端并强刷。
+桌面客户端：`dsh plugin` 不能操作客户端自带的 `desktop` profile，请到 **设置 → 插件 → 市场** 里从 GitHub 源搜索 `dsh-pet-clove` 安装，装完重启客户端。
 
-> 和 `dsh-theme-clove` 是两个独立插件，同时装会有两个角色，按需二选一。
+本地开发：clone 后 `dsh plugin --profile web add link:<路径>`。
+
+> 和 `dsh-theme-clove` 是两个独立插件，同时装会有两个角色，按需二选一。客户端里同样建议只留一个。
 
 ## 换成自己的图
 
