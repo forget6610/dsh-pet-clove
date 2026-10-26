@@ -782,7 +782,8 @@ window.__ModuleLoader__.load({
         care.todayEarn += batches * 12;
         care.lastTaskPay = Date.now();
         saveCare();
-        showBubble('跑任务津贴 +' + batches * 12 + ' 金币', 2800);
+        gainXp(batches * 6);
+        showBubble('跑任务津贴 +' + batches * 12 + ' 金币 +' + batches * 6 + ' 经验', 2800);
         if (panelOpen) renderPanel();
       }
 
@@ -947,7 +948,7 @@ window.__ModuleLoader__.load({
         } else {
           body.appendChild(makeRow('今日已签到', '', '', '', null, false));
         }
-        body.appendChild(el('div', 'pet-panel-hint', '在线跑任务：每 10 分钟 +12 金币（今日已赚 ' + care.todayEarn + ' / 240）。'));
+        body.appendChild(el('div', 'pet-panel-hint', '在线跑任务：每 10 分钟 +12 金币 +6 经验（今日金币已赚 ' + care.todayEarn + ' / 240）。'));
       }
 
       function renderShop(body) {
@@ -1336,8 +1337,9 @@ window.__ModuleLoader__.load({
       syncPinButton();
       loadCare();
       applyDecay();
-      buildPanel();
+      maybeTaskPay();
       if (signInPending()) doSignIn();
+      buildPanel();
       careTimer = later(careTick, 60000);
 
       function pointerOffset(event) {
