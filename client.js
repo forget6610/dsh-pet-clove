@@ -280,6 +280,7 @@ window.__ModuleLoader__.load({
   transform-origin: 50% 0;
 }
 .dsh-clove-pet .pet-bubble.is-below.is-visible { transform: translate(calc(-50% + var(--bubble-shift, 0px)), 0) rotate(var(--bubble-rot, -1.2deg)) scale(1); }
+.dsh-clove-pet.is-hover .pet-bubble:not(.is-below) { bottom: calc(100% + 44px); }
 .dsh-clove-pet .pet-bubble.is-below::after {
   top: -7px;
   bottom: auto;
