@@ -709,9 +709,9 @@ window.__ModuleLoader__.load({
           return;
         }
         if (minutes > 720) minutes = 720;
-        care.hunger = clampCare(care.hunger - minutes / 5);
-        care.thirst = clampCare(care.thirst - minutes / 4);
-        care.happiness = clampCare(care.happiness - minutes / 12);
+        care.hunger = clampCare(care.hunger - minutes / 25);
+        care.thirst = clampCare(care.thirst - minutes / 20);
+        care.happiness = clampCare(care.happiness - minutes / 40);
         care.lastTick = nowMs;
         saveCare();
       }

@@ -312,8 +312,8 @@ const d = new Date();
 const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 let careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
 assert.equal(careSave.coins, 1080, 'daily sign-in reward missing');
-assert.ok(Math.abs(careSave.hunger - 36) < 0.2, 'hunger did not decay: ' + careSave.hunger);
-assert.ok(Math.abs(careSave.thirst - 35) < 0.2, 'thirst did not decay: ' + careSave.thirst);
+assert.ok(Math.abs(careSave.hunger - 39.2) < 0.2, 'hunger did not decay: ' + careSave.hunger);
+assert.ok(Math.abs(careSave.thirst - 39) < 0.2, 'thirst did not decay: ' + careSave.thirst);
 assert.equal(careSave.xp, 20, 'sign-in xp missing');
 assert.equal(careSave.lastLogin, today, 'lastLogin not recorded');
 
@@ -332,7 +332,7 @@ assert.ok(coinsEl && coinsEl.textContent.includes('1080'), 'coins not rendered')
 assert.equal(panelNodes.filter((n) => n.classList.contains('pet-bar-fill')).length, 4, 'stat bars missing');
 assert.deepEqual(
   panelNodes.filter((n) => n.classList.contains('pet-bar-value')).map((n) => n.textContent),
-  ['36 / 100', '35 / 100', '48 / 100'],
+  ['39 / 100', '39 / 100', '49 / 100'],
   'stat values wrong',
 );
 assert.ok(panelNodes.some((n) => n.textContent === '今日已签到'), 'sign-in state not rendered');
@@ -353,7 +353,7 @@ assert.ok(eatBtn, 'feed button missing');
 eatBtn.dispatch('click', { stopPropagation() {} });
 careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
 assert.equal(careSave.inventory.candy, undefined, 'eaten food not removed');
-assert.ok(Math.abs(careSave.hunger - 46) < 0.2, 'hunger not restored: ' + careSave.hunger);
+assert.ok(Math.abs(careSave.hunger - 49.2) < 0.2, 'hunger not restored: ' + careSave.hunger);
 assert.equal(careSave.xp, 29, 'buy/feed xp missing: ' + careSave.xp);
 
 // toys: buy a handheld and play with it, cooldown blocks the second play
