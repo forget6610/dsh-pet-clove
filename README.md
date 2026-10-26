@@ -1,22 +1,22 @@
 # dsh-pet-clove
 
-DeepSeek Harness Web GUI 的桌面宠物插件：一只会走动、会被你拖着跑、摸头会撒娇、还会睡觉的小家伙。
+DeepSeek Harness Web GUI 的桌面宠物：一只会在屏幕里飞来飞去、能被拖着甩出去、摸头会冒爱心、还会自己睡觉的小家伙。
 
-仓库里**不带**同人图，默认用 `assets/default/pet.png` 一张原创的蝴蝶占位图；想用自己的角色，替换它就行（透明底 PNG，高 300–500px）。
+仓库不带同人图，默认用 `assets/default/pet.png`（原创的蝴蝶小精灵）占位；换成自己的图见下面。
 
 ![preview](preview/preview.png)
 
-## 能干什么
+## 会做什么
 
-- 待机：呼吸浮动，每 5–9 秒随机走动、跳一下、转圈或自言自语
-- 拖动：跟随指针，松手按重力落下、弹一下；拖动途中会喊两句
-- 摸头：点击角色或 ♥ 按钮，跳起来冒爱心，亲密度 +1（存 localStorage）
-- 双击转圈，右键睡觉/唤醒；睡着时慢慢呼吸、冒 `Z`
-- 悬停出现 ♥ 和 ☾ 两个小按钮；太久没人理会自己睡着
-- 会记住上次站的位置，重启后还在原地
-- 67 句台词，按场景分池（问候/摸头/拖拽/落地/睡觉/独处/深夜……），连续两句不重复
-- 亲密度 5 / 10 / 20 / 50 有专属台词
+- **自由飞行**：平时每隔几秒自己挑个位置飞过去，平滑移动带倾斜和拖尾星点；首次出现会从右边飞进来
+- **拖动**：按住就能拖，松手带着惯性甩出去，碰到屏幕边缘会弹回来，最后自己停下
+- **摸头**：点一下跳起来冒爱心 + 随机台词，亲密度 +1（存 localStorage）
+- **双击**转一圈，**右键**睡觉/唤醒；睡着时慢慢呼吸冒 `Z`
+- **悬停**出现三个按钮：♥ 摸头、✦ 飞一下、☾ 睡觉
+- **记位置**：关掉再打开还在上次待的地方；太久没人理会自己睡着
+- **67 句台词**，按场景分池（问候/摸头/拖拽/独处/深夜…），连续两句不重复
 - 漫画尖角气泡，带蝴蝶翼角标，每句随机倾斜，贴屏幕边会自动挪回视口
+- 窄屏隐藏；`prefers-reduced-motion` 下关掉装饰动画，但宠物还是会动
 
 ## 安装
 
@@ -27,28 +27,30 @@ dsh plugin --profile web add github:forget6610/dsh-pet-clove
 dsh web
 ```
 
-桌面客户端：`dsh plugin` 不能操作客户端自带的 `desktop` profile，请到 **设置 → 插件 → 市场** 里从 GitHub 源搜索 `dsh-pet-clove` 安装，装完重启客户端。
+桌面客户端：到 **设置 → 插件 → 市场** 从 GitHub 源搜索 `dsh-pet-clove` 安装，装完重启客户端。
 
 本地开发：clone 后 `dsh plugin --profile web add link:<路径>`。
 
-> 和 `dsh-theme-clove` 是两个独立插件，同时装会有两个角色，按需二选一。客户端里同样建议只留一个。
+## 换角色图
 
-## 换成自己的图
-
-替换 `assets/pet.png` 即可。要求透明底 PNG、角色大致居中、高 300–500px；底部加一点渐隐会更自然。没放的话会继续用 `assets/default/pet.png`。
+替换 `assets/pet.png`：透明底 PNG、角色大致居中、高 300–500px，底部带一点渐隐更自然。没放就继续用 `assets/default/pet.png`。这个文件在 `.gitignore` 里。
 
 ## 调手感
 
-- `client.js` 顶部：`WALK_SPEED`（92 px/s）、`GRAVITY`（2600）、`BOUNCE`（0.32）
-- 大小：CSS 变量 `--clove-pet-size`，默认 150px
+`client.js` 顶部几个常量：
+
+- `MARGIN` 边缘留白（8px）
+- `FRICTION` 甩出后的阻尼（2.6，越大停得越快）
+- `BOUNCE` 碰边反弹系数（0.55）
+- 大小：CSS 变量 `--clove-pet-size`（默认 150px）
 - 台词：`LINES` 对象，按场景分数组
-- 存档键：`dsh-clove-pet:pos:v1`、`dsh-clove-pet:affinity:v1`
+- 存档键：`dsh-clove-pet:pos:v2`、`dsh-clove-pet:affinity:v1`
 
 ## 结构
 
 ```
-host.js          # 宠物图路由，带默认图回退
-client.js        # 状态机、拖动/重力、互动、粒子、台词
+host.js          # 宠物图路由（带默认图回退）
+client.js        # 飞行/拖动/互动/粒子/台词
 assets/default/  # 占位素材（原创）
 test/            # 两个零依赖测试
 ```
@@ -60,14 +62,12 @@ npm test
 node test/host-smoke.mjs
 ```
 
-`npm test` 用手写 DOM stub 跑：挂载、读档、摸头加亲密度、双击、睡眠、拖动、重力落地、卸载清理；rAF 是手动步进验证落地的。
+`npm test` 用手写 DOM stub 跑：挂载、读档、摸头、双击、睡觉、飞行动画的 rAF 结束、拖动 + 惯性滑行、卸载清理；顺手校验生成的 CSS 不是坏的。
 
 ## 许可
 
-代码 MIT。`assets/default/` 的占位图原创，随代码一起按 MIT 使用。
-
-「暮蝶 / Clove」和 VALORANT 是 Riot Games 的商标，本仓库与 Riot 无关，也不分发官方或同人素材。
+代码 MIT。`assets/default/` 的占位图原创，随代码按 MIT 使用。仓库与 Riot Games 无关，也不分发官方或同人素材。
 
 ---
 
-A small interactive desktop pet for the DeepSeek Harness web GUI: it wanders around, can be dragged with gravity, reacts to clicks, falls asleep when ignored, and remembers where it stands. 67 lines of dialogue across contexts. Ships original placeholder art, MIT licensed. Not affiliated with Riot Games.
+A small floating desktop pet for the DeepSeek Harness web GUI: it flies around on its own, can be dragged and thrown with inertia, gives hearts when petted, spins on double click, sleeps when ignored, and remembers where it was. 67 lines of dialogue. Ships original placeholder art. MIT. Not affiliated with Riot Games.

@@ -157,9 +157,9 @@ class Doc {
 const document = new Doc();
 globalThis.document = document;
 
-// pre-seed a save file: affinity 7, horizontal position 50%
+// pre-seed a save file: affinity 7, middle of the viewport
 store.set('dsh-clove-pet:affinity:v1', '7');
-store.set('dsh-clove-pet:pos:v1', '0.5');
+store.set('dsh-clove-pet:pos:v2', '0.5,0.5');
 
 await import('../client.js');
 
@@ -170,6 +170,11 @@ assert.equal(spec.id, 'dsh-pet-clove');
 const plugin = spec.factory(() => ({}));
 assert.deepEqual(plugin.inject, []);
 assert.equal(typeof plugin.apply, 'function');
+
+// the generated CSS must stay valid — braces glued together were a real bug
+assert.ok(plugin._debug.css.includes('.dsh-clove-pet {'), 'pet CSS block missing');
+assert.ok(plugin._debug.css.includes('position: fixed;'), 'pet CSS is not fixed-positioned');
+assert.ok(!plugin._debug.css.includes(',  position'), 'pet CSS collapsed into a comma list');
 
 const disposers = [];
 plugin.apply({
@@ -187,32 +192,34 @@ const nodes = [];
 walk(pet, (n) => nodes.push(n));
 const img = nodes.find((n) => n.classList.contains('pet-img'));
 const bubble = nodes.find((n) => n.classList.contains('pet-bubble'));
-const shadow = nodes.find((n) => n.classList.contains('pet-shadow'));
+const glow = nodes.find((n) => n.classList.contains('pet-glow'));
 const btn = nodes.find((n) => n.classList.contains('pet-btn'));
 const acts = nodes.filter((n) => n.classList.contains('pet-act'));
 const fx = nodes.find((n) => n.classList.contains('pet-fx'));
-assert.ok(img && bubble && shadow && btn && fx, 'incomplete pet DOM');
+assert.ok(img && bubble && glow && btn && fx, 'incomplete pet DOM');
 assert.equal(img.attrs['src'], '/dsh-clove-pet/pet.png', 'wrong pet image path');
-assert.equal(acts.length, 2, 'expected two action buttons');
+assert.equal(acts.length, 3, 'expected three hover buttons');
 
-// position restored from storage, standing on the floor
+// position restored from storage, inside the viewport
 const petW = 120;
 const petH = Math.round(petW * 1.02);
-assert.equal(pet.style.getPropertyValue('--pet-y'), String(800 - petH - 14) + 'px', 'pet not on the floor');
-assert.equal(pet.style.getPropertyValue('--pet-x'), String(Math.round(0.5 * (1280 - petW))) + 'px', 'saved position not restored');
-assert.equal(pet.style.getPropertyValue('--pet-face'), '1');
+const margin = 8;
+const maxX = 1280 - petW - margin;
+const maxY = 800 - petH - margin;
+assert.equal(pet.style.getPropertyValue('--pet-x'), String(margin + 0.5 * (maxX - margin)) + 'px', 'saved x not restored');
+assert.equal(pet.style.getPropertyValue('--pet-y'), String(margin + 0.5 * (maxY - margin)) + 'px', 'saved y not restored');
+assert.ok(timeouts.size > 0, 'intro/idle timers not scheduled');
 
 // petting: bubble, hearts, affinity +1
 btn.dispatch('click', { detail: 1 });
 assert.ok(bubble.classList.contains('is-visible'), 'no bubble after petting');
 assert.ok(bubble.textContent.length > 0, 'empty bubble');
 assert.ok(pet.classList.contains('is-happy'), 'no happy animation');
-assert.ok(fx.children.filter((n) => n.classList.contains('pet-fx-item')).length >= 5, 'no heart particles');
+assert.ok(fx.children.filter((n) => n.classList.contains('pet-fx-item')).length >= 3, 'no heart particles');
 assert.equal(store.get('dsh-clove-pet:affinity:v1'), '8', 'affinity not persisted');
 assert.match(bubble.style.getPropertyValue('--bubble-rot'), /deg$/, 'bubble has no tilt');
-assert.ok(bubble.style.getPropertyValue('--bubble-shift').endsWith('px'), 'bubble has no edge offset');
 
-// the line pool should be sizeable
+// line pool
 const L = plugin._debug.lines;
 const lineCount =
   Object.values(L.hello).reduce((sum, pool) => sum + pool.length, 0) +
@@ -235,7 +242,22 @@ assert.ok(pet.classList.contains('is-sleep'), 'right click did not sleep');
 btn.dispatch('contextmenu', { preventDefault() {} });
 assert.ok(!pet.classList.contains('is-sleep'), 'second right click did not wake up');
 
-// dragging follows the pointer
+// the fly button starts a flight (rAF driven), frames finish it
+const flyBtn = acts.find((n) => n.classList.contains('pet-act-fly'));
+assert.ok(flyBtn, 'missing fly button');
+flyBtn.dispatch('click', { stopPropagation() {} });
+assert.ok(pet.classList.contains('is-flying'), 'fly button did not start a flight');
+assert.ok(rafs.size > 0, 'flight did not schedule a frame');
+let stamp = 1000;
+for (let i = 0; i < 200 && rafs.size > 0; i++) {
+  const frames = [...rafs.values()];
+  rafs.clear();
+  stamp += 100;
+  frames.forEach((fn) => fn(stamp));
+}
+assert.ok(!pet.classList.contains('is-flying'), 'flight did not finish');
+
+// dragging follows the pointer, release glides with inertia
 btn.dispatch('pointerdown', {
   clientX: 640,
   clientY: 400,
@@ -244,29 +266,28 @@ btn.dispatch('pointerdown', {
   preventDefault() {},
 });
 assert.ok(pet.classList.contains('is-drag'), 'pointerdown did not start dragging');
-const before = pet.style.getPropertyValue('--pet-x');
+const beforeX = pet.style.getPropertyValue('--pet-x');
 const moveHandlers = windowListeners.get('pointermove') || [];
 assert.equal(moveHandlers.length, 1, 'no pointermove listener');
-moveHandlers[0]({ clientX: 600, clientY: 260 });
-assert.notEqual(pet.style.getPropertyValue('--pet-x'), before, 'drag did not move the pet');
+moveHandlers[0]({ clientX: 720, clientY: 460 });
+assert.notEqual(pet.style.getPropertyValue('--pet-x'), beforeX, 'drag did not move the pet');
 const upHandlers = windowListeners.get('pointerup') || [];
 assert.equal(upHandlers.length, 1, 'no pointerup listener');
 upHandlers[0]();
 assert.ok(!pet.classList.contains('is-drag'), 'still dragging after release');
-assert.ok(pet.classList.contains('is-falling'), 'pet did not fall after release');
+assert.ok(pet.classList.contains('is-gliding'), 'release did not start inertia glide');
 assert.equal((windowListeners.get('pointermove') || []).length, 0, 'pointermove listener not removed');
-
-// gravity: step requestAnimationFrame until it lands
-let stamp = 1000;
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < 400 && rafs.size > 0; i++) {
   const frames = [...rafs.values()];
   rafs.clear();
-  if (frames.length === 0) break;
-  stamp += 100;
+  stamp += 80;
   frames.forEach((fn) => fn(stamp));
 }
-assert.ok(!pet.classList.contains('is-falling'), 'fall did not finish');
-assert.equal(pet.style.getPropertyValue('--pet-y'), String(800 - petH - 14) + 'px', 'pet did not land');
+assert.ok(!pet.classList.contains('is-gliding'), 'glide did not settle');
+const finalX = parseFloat(pet.style.getPropertyValue('--pet-x'));
+const finalY = parseFloat(pet.style.getPropertyValue('--pet-y'));
+assert.ok(finalX >= margin && finalX <= maxX, 'pet drifted outside the viewport horizontally');
+assert.ok(finalY >= margin && finalY <= maxY, 'pet drifted outside the viewport vertically');
 
 // unmount leaves nothing behind
 disposers.forEach((fn) => fn());
@@ -275,5 +296,6 @@ assert.ok(!document.head.children.some((el) => el.id === 'dsh-clove-pet-css'), '
 assert.equal(timeouts.size, 0, 'timers not cleared');
 assert.equal(rafs.size, 0, 'animation frames not cleared');
 assert.equal((windowListeners.get('resize') || []).length, 0, 'resize listener not removed');
+assert.equal((windowListeners.get('pointermove') || []).length, 0, 'pointermove listener leaked');
 
-console.log('smoke ok: mount / restore / petting / spin / sleep / drag+gravity / cleanup');
+console.log('smoke ok: mount / restore / petting / spin / sleep / fly / drag+inertia / cleanup');
