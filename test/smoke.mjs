@@ -212,6 +212,18 @@ assert.equal(typeof plugin.apply, 'function');
 assert.ok(plugin._debug.css.includes('.dsh-clove-pet {'), 'pet CSS block missing');
 assert.ok(plugin._debug.css.includes('position: fixed;'), 'pet CSS is not fixed-positioned');
 assert.ok(!plugin._debug.css.includes(',  position'), 'pet CSS collapsed into a comma list');
+assert.ok(plugin._debug.css.includes('#24103a'), 'panel background is not opaque');
+
+// the shop catalogue stays sensible and free of trademarked toy names
+const shop = plugin._debug.shop;
+assert.ok(shop.length >= 25, 'shop catalogue too small: ' + shop.length);
+assert.equal(new Set(shop.map((item) => item.id)).size, shop.length, 'duplicate shop item ids');
+assert.deepEqual([...new Set(shop.map((item) => item.kind))].sort(), ['drink', 'food', 'toy'], 'missing shop category');
+const trademark = /playstation|nintendo|switch|xbox|ps[0-9]|mario|zelda/i;
+shop.forEach((item) => {
+  assert.ok(item.name && item.price > 0, 'bad shop item: ' + item.id);
+  assert.ok(!trademark.test(item.name), 'toy name looks trademarked: ' + item.name);
+});
 
 const disposers = [];
 plugin.apply({
@@ -252,6 +264,7 @@ btn.dispatch('click', { detail: 1 });
 assert.ok(bubble.classList.contains('is-visible'), 'no bubble after petting');
 assert.ok(bubble.textContent.length > 0, 'empty bubble');
 assert.ok(pet.classList.contains('is-happy'), 'no happy animation');
+assert.ok(!bubble.classList.contains('is-below'), 'bubble should sit above when there is room');
 
 // the action row stays visible while the pointer is over the row itself
 const actionsEl = nodes.find((n) => n.classList.contains('pet-actions'));
@@ -423,6 +436,20 @@ const finalX = parseFloat(pet.style.getPropertyValue('--pet-x'));
 const finalY = parseFloat(pet.style.getPropertyValue('--pet-y'));
 assert.ok(finalX >= margin && finalX <= maxX, 'pet drifted outside the viewport horizontally');
 assert.ok(finalY >= margin && finalY <= maxY, 'pet drifted outside the viewport vertically');
+
+// near the top edge the speech bubble flips below instead of being clipped
+const topY = parseFloat(pet.style.getPropertyValue('--pet-y'));
+const topX = parseFloat(pet.style.getPropertyValue('--pet-x'));
+btn.dispatch('pointerdown', { clientX: topX, clientY: topY + 30, button: 0, preventDefault() {} });
+(windowListeners.get('pointermove') || [])[0]({ clientX: topX, clientY: 38 });
+(windowListeners.get('pointerup') || [])[0]();
+const topPanelBtn = acts.find((n) => n.classList.contains('pet-act-panel'));
+topPanelBtn.dispatch('click', { stopPropagation() {} });
+const topPanel = document.querySelector('.dsh-clove-panel');
+allNodes(topPanel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '状态').dispatch('click', {});
+buttonIn(topPanel, '摸摸').dispatch('click', {});
+assert.ok(bubble.classList.contains('is-below'), 'bubble did not flip below near the top edge');
+allNodes(topPanel).find((n) => n.classList.contains('pet-panel-close')).dispatch('click', {});
 
 // unmount leaves nothing behind
 disposers.forEach((fn) => fn());

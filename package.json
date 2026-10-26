@@ -1,6 +1,6 @@
 {
   "name": "dsh-pet-clove",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "Interactive desktop pet for the DeepSeek Harness web GUI: wanders, can be dragged, reacts to clicks, sleeps, and remembers its spot. Ships neutral placeholder art, bring your own.",
   "type": "module",
   "license": "MIT",

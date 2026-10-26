@@ -87,18 +87,31 @@ window.__ModuleLoader__.load({
     var SHOP_ITEMS = [
       { id: 'candy', name: '蝴蝶糖', kind: 'food', price: 8, hunger: 10, happy: 2, xp: 4, desc: '甜得发腻的小糖，暮蝶说勉强能吃。' },
       { id: 'chips', name: '海盐薯片', kind: 'food', price: 14, hunger: 16, thirst: -3, happy: 6, xp: 6, desc: '咔嚓咔嚓，越吃越渴。' },
+      { id: 'popcorn', name: '焦糖爆米花', kind: 'food', price: 16, hunger: 12, happy: 8, xp: 6, desc: '看戏的时候来一桶，虽然她不爱看戏。' },
+      { id: 'pudding', name: '蝴蝶布丁', kind: 'food', price: 18, hunger: 14, happy: 6, xp: 8, desc: '晃一晃会抖，她说这个手感像烟雾。' },
+      { id: 'croissant', name: '双倍奶油可颂', kind: 'food', price: 22, hunger: 20, happy: 5, xp: 9, desc: '咬一口掉一桌渣，苏格兰人诚不我欺。' },
       { id: 'biscuit', name: '苏格兰小饼干', kind: 'food', price: 24, hunger: 26, happy: 4, xp: 12, desc: '她说这和老家下午茶一个味。' },
+      { id: 'scotch_egg', name: '苏格兰蛋', kind: 'food', price: 32, hunger: 30, happy: 6, xp: 15, desc: '外面一圈酥皮，里面是完整的蛋黄。' },
+      { id: 'salmon', name: '烟熏三文鱼', kind: 'food', price: 46, hunger: 34, happy: 12, xp: 20, desc: '配着面包吃，她说这叫体面。' },
       { id: 'berry', name: '永生浆果', kind: 'food', price: 60, hunger: 40, happy: 10, xp: 25, desc: '稀有货，吃完感觉自己也能永生。' },
+      { id: 'cake', name: '永生小蛋糕', kind: 'food', price: 70, hunger: 45, happy: 16, xp: 30, desc: '奶油足量，插着的蜡烛永远不会灭。' },
       { id: 'soda', name: '气泡水', kind: 'drink', price: 10, thirst: 20, xp: 4, desc: '最朴素的解渴办法。' },
+      { id: 'americano', name: '冰美式', kind: 'drink', price: 18, thirst: 22, happy: 3, xp: 7, desc: '清醒一点，才能继续放烟。' },
       { id: 'blue', name: '蓝莓苏打', kind: 'drink', price: 20, thirst: 28, happy: 4, xp: 8, desc: '蓝色，和她的头发很配。' },
+      { id: 'honey_tea', name: '蜂蜜柚子茶', kind: 'drink', price: 24, thirst: 26, happy: 8, xp: 10, desc: '天冷的时候她会主动要这个。' },
+      { id: 'cocoa', name: '热可可', kind: 'drink', price: 26, thirst: 24, hunger: 6, happy: 10, xp: 12, desc: '加了棉花糖，她说这是小孩子喝的。' },
       { id: 'tea', name: '蝴蝶花茶', kind: 'drink', price: 28, thirst: 32, happy: 8, xp: 12, desc: '据说泡开时像一群蝴蝶在飞。' },
+      { id: 'butterfly_soda', name: '蝶豆花气泡', kind: 'drink', price: 30, thirst: 34, happy: 6, xp: 14, desc: '倒进杯子里会变色，很花哨。' },
       { id: 'latte', name: '烟雾玛奇朵', kind: 'drink', price: 30, thirst: 26, hunger: 4, happy: 6, xp: 14, desc: '奶泡打得像她放的烟。' },
       { id: 'oolong', name: '冰雾乌龙', kind: 'drink', price: 36, thirst: 40, happy: 4, xp: 16, desc: '一口下去，脑子里的雾散了。' },
       { id: 'puzzle', name: '烟雾拼图', kind: 'toy', price: 90, happy: 12, xp: 8, playHappy: 5, playXp: 5, cooldownMin: 8, desc: '拼到最后一块总是找不到。' },
       { id: 'plush', name: '毛绒蝴蝶', kind: 'toy', price: 120, happy: 18, xp: 10, playHappy: 6, playXp: 4, cooldownMin: 6, desc: '抱着睡觉刚刚好。' },
+      { id: 'kitten', name: '猫咪玩偶', kind: 'toy', price: 130, happy: 20, xp: 12, playHappy: 6, playXp: 4, cooldownMin: 6, desc: '她说玩偶比真的猫好打理。' },
+      { id: 'kite', name: '蝴蝶风筝', kind: 'toy', price: 150, happy: 20, xp: 16, playHappy: 8, playXp: 6, cooldownMin: 7, desc: '起风的时候可以假装自己在飞。' },
       { id: 'lamp', name: '星云投影灯', kind: 'toy', price: 180, happy: 24, xp: 18, playHappy: 7, playXp: 5, cooldownMin: 7, desc: '关灯以后，房间像宇宙。' },
       { id: 'handheld', name: '星光掌机', kind: 'toy', price: 260, happy: 30, xp: 40, playHappy: 10, playXp: 8, cooldownMin: 10, desc: '便携的快乐，火车上也能玩。' },
       { id: 'console', name: '客厅主机', kind: 'toy', price: 420, happy: 45, xp: 70, playHappy: 12, playXp: 10, cooldownMin: 12, desc: '要接电视的那种，她说放烟雾里刚好。' },
+      { id: 'arcade', name: '迷你街机', kind: 'toy', price: 320, happy: 36, xp: 52, playHappy: 11, playXp: 9, cooldownMin: 11, desc: '摇杆咔咔响，她说这声音很解压。' },
     ];
 
     var CARE_LINES = {
@@ -144,8 +157,8 @@ window.__ModuleLoader__.load({
   height: 140%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(192, 132, 252, 0.36), rgba(244, 114, 182, 0.16) 46%, rgba(244, 114, 182, 0) 74%);
-  filter: blur(14px);
+  background: radial-gradient(closest-side, rgba(192, 132, 252, 0.26), rgba(244, 114, 182, 0.11) 46%, rgba(244, 114, 182, 0) 74%);
+  filter: blur(16px);
   animation: pet-glow 4.6s ease-in-out infinite;
   pointer-events: none;
 }
@@ -224,6 +237,22 @@ window.__ModuleLoader__.load({
 }
 .dsh-clove-pet .pet-bubble.is-visible { opacity: 1; transform: translate(calc(-50% + var(--bubble-shift, 0px)), 0) rotate(var(--bubble-rot, -1.2deg)) scale(1); }
 
+.dsh-clove-pet .pet-bubble.is-below {
+  bottom: auto;
+  top: calc(100% - 2px);
+  transform: translate(calc(-50% + var(--bubble-shift, 0px)), -6px) rotate(var(--bubble-rot, -1.2deg)) scale(0.92);
+  transform-origin: 50% 0;
+}
+.dsh-clove-pet .pet-bubble.is-below.is-visible { transform: translate(calc(-50% + var(--bubble-shift, 0px)), 0) rotate(var(--bubble-rot, -1.2deg)) scale(1); }
+.dsh-clove-pet .pet-bubble.is-below::after {
+  top: -7px;
+  bottom: auto;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 1.5px solid rgba(244, 114, 182, 0.55);
+  border-top: 1.5px solid rgba(244, 114, 182, 0.55);
+}
+
 .dsh-clove-pet .pet-actions {
   position: absolute;
   left: 50%;
@@ -274,7 +303,7 @@ window.__ModuleLoader__.load({
   0%, 100% { transform: scaleX(var(--pet-face, 1)) translateY(0) rotate(-1deg); }
   50% { transform: scaleX(var(--pet-face, 1)) translateY(-7px) rotate(1deg); }
 }
-@keyframes pet-glow { 0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.96); } 50% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.05); } }
+@keyframes pet-glow { 0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.96); } 50% { opacity: 0.72; transform: translate(-50%, -50%) scale(1.05); } }
 @keyframes pet-happy {
   0% { transform: translateY(0) scale(1); }
   28% { transform: translateY(-14px) scale(1.06, 0.94); }
@@ -316,7 +345,7 @@ window.__ModuleLoader__.load({
   flex-direction: column;
   overflow: hidden;
   border-radius: 18px;
-  background: linear-gradient(160deg, rgba(36, 16, 54, 0.97), rgba(18, 9, 30, 0.98));
+  background: linear-gradient(160deg, #24103a 0%, #140a22 100%);
   border: 1.5px solid rgba(244, 114, 182, 0.42);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(10, 5, 18, 0.9);
   color: #FDF2F8;
@@ -609,6 +638,11 @@ window.__ModuleLoader__.load({
         bubble.style.setProperty('--bubble-rot', rand(-1.6, 1.6).toFixed(2) + 'deg');
         bubble.classList.remove('is-visible');
         void bubble.offsetWidth;
+        // bubble above the head normally, but flip below when the pet is near
+        // the top edge so the text never gets clipped off-screen
+        var bubbleHeight = bubble.offsetHeight || 60;
+        if (state.y - MARGIN < bubbleHeight + 14) bubble.classList.add('is-below');
+        else bubble.classList.remove('is-below');
         bubble.classList.add('is-visible');
         if (bubbleTimer !== null) window.clearTimeout(bubbleTimer);
         bubbleTimer = later(function () { bubble.classList.remove('is-visible'); }, ms || 3600);
