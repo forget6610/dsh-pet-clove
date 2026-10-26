@@ -247,16 +247,18 @@ assert.equal(pet.style.getPropertyValue('--pet-x'), String(margin + 0.5 * (maxX 
 assert.equal(pet.style.getPropertyValue('--pet-y'), String(margin + 0.5 * (maxY - margin)) + 'px', 'saved y not restored');
 assert.ok(timeouts.size > 0, 'intro/idle timers not scheduled');
 
-// clicking the pet toggles the care panel, clicking again closes it
+// clicking the pet toggles the action row instead of opening the panel
 btn.dispatch('click', { detail: 1 });
+assert.ok(pet.classList.contains('is-hover'), 'click did not reveal the action row');
+btn.dispatch('click', { detail: 1 });
+assert.ok(!pet.classList.contains('is-hover'), 'second click did not hide the action row');
+
+// panel opens from its button; petting goes through the panel quick action
+const panelToggleBtn = acts.find((n) => n.classList.contains('pet-act-panel'));
+panelToggleBtn.dispatch('click', { stopPropagation() {} });
 const earlyPanel = document.querySelector('.dsh-clove-panel');
 assert.ok(earlyPanel, 'panel was not built');
-assert.equal(earlyPanel.style.display, 'flex', 'first click did not open the panel');
-btn.dispatch('click', { detail: 1 });
-assert.equal(earlyPanel.style.display, 'none', 'second click did not close the panel');
-
-// petting now goes through the panel quick action
-btn.dispatch('click', { detail: 1 });
+assert.equal(earlyPanel.style.display, 'flex', 'panel button did not open the panel');
 const quickPet = buttonIn(earlyPanel, '摸摸');
 assert.ok(quickPet, 'panel quick action missing');
 quickPet.dispatch('click', {});
@@ -281,7 +283,7 @@ for (let i = 0; i < 4; i++) {
   buttonIn(document.querySelector('.dsh-clove-panel'), '摸摸').dispatch('click', {});
 }
 assert.equal(store.get('dsh-clove-pet:affinity:v1'), '12', 'affinity did not accumulate');
-btn.dispatch('click', { detail: 1 });
+allNodes(document.querySelector('.dsh-clove-panel')).find((n) => n.classList.contains('pet-panel-close')).dispatch('click', {});
 assert.equal(document.querySelector('.dsh-clove-panel').style.display, 'none', 'panel did not close');
 
 // double click spins

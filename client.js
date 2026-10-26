@@ -227,24 +227,24 @@ window.__ModuleLoader__.load({
 .dsh-clove-pet .pet-actions {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 4px);
   transform: translateX(-50%) translateY(6px);
   display: flex;
-  gap: 6px;
+  gap: 7px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
 .dsh-clove-pet.is-hover .pet-actions { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 .dsh-clove-pet .pet-act {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   color: #FDF2F8;
   background: rgba(28, 16, 48, 0.94);
@@ -508,8 +508,8 @@ window.__ModuleLoader__.load({
       var button = document.createElement('button');
       button.className = 'pet-btn';
       button.setAttribute('type', 'button');
-      button.setAttribute('title', '暮蝶桌宠：点我打开面板，拖我换位置');
-      button.setAttribute('aria-label', '暮蝶桌宠，点我打开日常面板');
+      button.setAttribute('title', '暮蝶桌宠：点我显示/隐藏按钮，拖我换位置');
+      button.setAttribute('aria-label', '暮蝶桌宠，点我显示或隐藏操作按钮');
 
       var body = document.createElement('div');
       body.className = 'pet-body';
@@ -557,6 +557,7 @@ window.__ModuleLoader__.load({
 
       var drag = null;
       var justDragged = false;
+      var actionsLocked = false;
       var idleTimer = null;
       var bubbleTimer = null;
       var zzzTimer = null;
@@ -1449,7 +1450,7 @@ window.__ModuleLoader__.load({
       function onClick(event) {
         if (justDragged) return;
         if (event && event.detail > 1) return;
-        togglePanel();
+        toggleActions();
       }
 
       function onDoubleClick(event) {
@@ -1467,7 +1468,14 @@ window.__ModuleLoader__.load({
       }
 
       function hideHover() {
+        if (actionsLocked) return;
         later(function () { host.classList.remove('is-hover'); }, 260);
+      }
+
+      function toggleActions() {
+        actionsLocked = !actionsLocked;
+        if (actionsLocked) host.classList.add('is-hover');
+        else host.classList.remove('is-hover');
       }
 
       function onPinClick(event) {
