@@ -15,6 +15,7 @@ window.__ModuleLoader__.load({
     var STORE_POS = 'dsh-clove-pet:pos:v2';
     var STORE_AFF = 'dsh-clove-pet:affinity:v1';
     var STORE_PIN = 'dsh-clove-pet:pinned:v1';
+    var STORE_CARE = 'dsh-clove-pet:care:v1';
     var DEFAULT_SIZE = 150;
     var MARGIN = 8;
     var FRICTION = 2.6;
@@ -82,6 +83,44 @@ window.__ModuleLoader__.load({
       walkAway: ['去那边看看。', '散个步。', '有点无聊，溜达一下。'],
       lateNight: ['这个点还不睡，明天会后悔的。', '熬夜冠军？我陪你就是了。'],
     };
+
+    var SHOP_ITEMS = [
+      { id: 'candy', name: '蝴蝶糖', kind: 'food', price: 8, hunger: 10, happy: 2, xp: 4, desc: '甜得发腻的小糖，暮蝶说勉强能吃。' },
+      { id: 'chips', name: '海盐薯片', kind: 'food', price: 14, hunger: 16, thirst: -3, happy: 6, xp: 6, desc: '咔嚓咔嚓，越吃越渴。' },
+      { id: 'biscuit', name: '苏格兰小饼干', kind: 'food', price: 24, hunger: 26, happy: 4, xp: 12, desc: '她说这和老家下午茶一个味。' },
+      { id: 'berry', name: '永生浆果', kind: 'food', price: 60, hunger: 40, happy: 10, xp: 25, desc: '稀有货，吃完感觉自己也能永生。' },
+      { id: 'soda', name: '气泡水', kind: 'drink', price: 10, thirst: 20, xp: 4, desc: '最朴素的解渴办法。' },
+      { id: 'blue', name: '蓝莓苏打', kind: 'drink', price: 20, thirst: 28, happy: 4, xp: 8, desc: '蓝色，和她的头发很配。' },
+      { id: 'tea', name: '蝴蝶花茶', kind: 'drink', price: 28, thirst: 32, happy: 8, xp: 12, desc: '据说泡开时像一群蝴蝶在飞。' },
+      { id: 'latte', name: '烟雾玛奇朵', kind: 'drink', price: 30, thirst: 26, hunger: 4, happy: 6, xp: 14, desc: '奶泡打得像她放的烟。' },
+      { id: 'oolong', name: '冰雾乌龙', kind: 'drink', price: 36, thirst: 40, happy: 4, xp: 16, desc: '一口下去，脑子里的雾散了。' },
+      { id: 'puzzle', name: '烟雾拼图', kind: 'toy', price: 90, happy: 12, xp: 8, playHappy: 5, playXp: 5, cooldownMin: 8, desc: '拼到最后一块总是找不到。' },
+      { id: 'plush', name: '毛绒蝴蝶', kind: 'toy', price: 120, happy: 18, xp: 10, playHappy: 6, playXp: 4, cooldownMin: 6, desc: '抱着睡觉刚刚好。' },
+      { id: 'lamp', name: '星云投影灯', kind: 'toy', price: 180, happy: 24, xp: 18, playHappy: 7, playXp: 5, cooldownMin: 7, desc: '关灯以后，房间像宇宙。' },
+      { id: 'handheld', name: '星光掌机', kind: 'toy', price: 260, happy: 30, xp: 40, playHappy: 10, playXp: 8, cooldownMin: 10, desc: '便携的快乐，火车上也能玩。' },
+      { id: 'console', name: '客厅主机', kind: 'toy', price: 420, happy: 45, xp: 70, playHappy: 12, playXp: 10, cooldownMin: 12, desc: '要接电视的那种，她说放烟雾里刚好。' },
+    ];
+
+    var CARE_LINES = {
+      eat: ['谢谢，还凑合。', '就这？……好吧，谢谢。', '味道不错，再买一份。', '你居然记得我喜欢什么。', '蝴蝶也得吃饭的。'],
+      drink: ['解渴了。', '这杯还行。', '再来一杯也不介意。', '你是不是在讨好我？'],
+      hungry: ['肚子在叫了，给我买点吃的吧。', '有点渴，想喝东西。', '饿着肚子的蝴蝶飞不动。', '再不理我，我就要饿死了……大概。'],
+      play: ['这个我能玩一整天。', '陪我再玩一局。', '你买这个干嘛？……谢了。', '别抢，是我的。'],
+      broke: ['金币不够，再去跑几个任务吧。', '穷成这样还想养我？'],
+      sign: ['上线打卡，钱到账了。', '今天也没白来。'],
+      level: ['升级了？看来没白吃你的东西。', '又长大了一点，虽然我不承认。'],
+    };
+
+    function xpForLevel(n) {
+      if (n <= 1) return 0;
+      return Math.round(80 * Math.pow(n - 1, 1.45));
+    }
+
+    function levelFromXp(xp) {
+      var level = 1;
+      while (level < 30 && xp >= xpForLevel(level + 1)) level += 1;
+      return level;
+    }
 
     var CSS = `
 .dsh-clove-pet {
@@ -264,6 +303,124 @@ window.__ModuleLoader__.load({
 }
 `;
 
+    var PANEL_CSS = `
+.dsh-clove-panel {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  width: 300px;
+  max-height: calc(100vh - 96px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(36, 16, 54, 0.97), rgba(18, 9, 30, 0.98));
+  border: 1.5px solid rgba(244, 114, 182, 0.42);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(10, 5, 18, 0.9);
+  color: #FDF2F8;
+  font-size: 12.5px;
+  pointer-events: auto;
+}
+
+.dsh-clove-panel .pet-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(244, 114, 182, 0.10);
+  border-bottom: 1px solid rgba(244, 114, 182, 0.18);
+}
+.dsh-clove-panel .pet-panel-title { flex: 1; font-weight: 600; letter-spacing: 0.02em; }
+.dsh-clove-panel .pet-panel-coins { color: #FDE68A; font-variant-numeric: tabular-nums; }
+.dsh-clove-panel .pet-panel-close {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #FDF2F8;
+  cursor: pointer;
+  line-height: 1;
+}
+.dsh-clove-panel .pet-panel-close:hover { background: rgba(244, 114, 182, 0.35); }
+
+.dsh-clove-panel .pet-panel-tabs { display: flex; gap: 6px; padding: 10px 12px 6px; }
+.dsh-clove-panel .pet-panel-tab {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(244, 114, 182, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  color: #E9D5FF;
+  font-size: 12px;
+  cursor: pointer;
+}
+.dsh-clove-panel .pet-panel-tab.is-active {
+  background: rgba(244, 114, 182, 0.28);
+  border-color: rgba(249, 168, 212, 0.7);
+  color: #FDF2F8;
+}
+
+.dsh-clove-panel .pet-panel-body { padding: 4px 12px 12px; overflow-y: auto; }
+.dsh-clove-panel .pet-panel-section { margin-top: 10px; }
+.dsh-clove-panel .pet-panel-hint { color: #B8A5D0; font-size: 11px; line-height: 1.6; margin-top: 6px; }
+.dsh-clove-panel .pet-panel-note { color: #F9A8D4; font-size: 11.5px; margin-top: 8px; }
+
+.dsh-clove-panel .pet-level-line { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
+.dsh-clove-panel .pet-level { font-weight: 700; color: #FDE68A; }
+.dsh-clove-panel .pet-xp-text { color: #B8A5D0; font-size: 11px; margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.dsh-clove-panel .pet-bar-row { margin-top: 8px; }
+.dsh-clove-panel .pet-bar-label { display: flex; justify-content: space-between; color: #E9D5FF; font-size: 11.5px; margin-bottom: 4px; }
+.dsh-clove-panel .pet-bar-label .pet-bar-value { color: #FDF2F8; font-variant-numeric: tabular-nums; }
+.dsh-clove-panel .pet-bar {
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+}
+.dsh-clove-panel .pet-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #F472B6, #8B5CF6); }
+.dsh-clove-panel .pet-bar-fill.is-hunger { background: linear-gradient(90deg, #FBBF24, #F472B6); }
+.dsh-clove-panel .pet-bar-fill.is-thirst { background: linear-gradient(90deg, #38BDF8, #818CF8); }
+.dsh-clove-panel .pet-bar-fill.is-happy { background: linear-gradient(90deg, #FB7185, #F9A8D4); }
+.dsh-clove-panel .pet-bar-fill.is-xp { background: linear-gradient(90deg, #FDE68A, #F472B6); }
+
+.dsh-clove-panel .pet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  margin-top: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(244, 114, 182, 0.12);
+}
+.dsh-clove-panel .pet-row-main { flex: 1; min-width: 0; }
+.dsh-clove-panel .pet-row-name { color: #FDF2F8; }
+.dsh-clove-panel .pet-row-desc { color: #B8A5D0; font-size: 10.5px; line-height: 1.5; margin-top: 2px; }
+.dsh-clove-panel .pet-row-meta { color: #FDE68A; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dsh-clove-panel .pet-btn-small {
+  padding: 4px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(244, 114, 182, 0.45);
+  background: rgba(244, 114, 182, 0.22);
+  color: #FDF2F8;
+  font-size: 11.5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dsh-clove-panel .pet-btn-small:hover { background: rgba(244, 114, 182, 0.4); }
+.dsh-clove-panel .pet-btn-small[disabled] { opacity: 0.4; cursor: default; }
+
+@media (max-width: 900px) {
+  .dsh-clove-panel { display: none; }
+}
+`;
+
+    var ALL_CSS = CSS + PANEL_CSS;
+
     var now = () => (window.performance && window.performance.now ? window.performance.now() : Date.now());
     var clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
     var rand = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -335,6 +492,12 @@ window.__ModuleLoader__.load({
       pinBtn.setAttribute('title', '固定在这个位置');
       pinBtn.textContent = '📌';
 
+      var panelBtn = document.createElement('button');
+      panelBtn.className = 'pet-act pet-act-panel';
+      panelBtn.setAttribute('type', 'button');
+      panelBtn.setAttribute('title', '小暮蝶的日常面板');
+      panelBtn.textContent = '📋';
+
       var sleepBtn = document.createElement('button');
       sleepBtn.className = 'pet-act pet-act-sleep';
       sleepBtn.setAttribute('type', 'button');
@@ -361,6 +524,7 @@ window.__ModuleLoader__.load({
       actions.appendChild(heartBtn);
       actions.appendChild(flyBtn);
       actions.appendChild(pinBtn);
+      actions.appendChild(panelBtn);
       actions.appendChild(sleepBtn);
       host.appendChild(glow);
       host.appendChild(fx);
@@ -469,6 +633,434 @@ window.__ModuleLoader__.load({
         }, 1300);
       }
 
+      // ---------------- 养成：饥饿 / 口渴 / 心情 / 经验 / 金币 / 商店 ----------------
+
+      var care = {
+        coins: 120,
+        xp: 0,
+        hunger: 85,
+        thirst: 85,
+        happiness: 70,
+        lastTick: Date.now(),
+        lastLogin: '',
+        todayEarn: 0,
+        todayKey: '',
+        lastTaskPay: Date.now(),
+        inventory: {},
+        toys: [],
+        toyCooldown: {},
+        feedCount: 0,
+        playCount: 0,
+        buyCount: 0,
+      };
+      var careTimer = null;
+      var panel = null;
+      var panelOpen = false;
+      var panelTab = 'status';
+      var panelCoins = null;
+      var panelBody = null;
+      var panelTabButtons = [];
+
+      function todayKey() {
+        var d = new Date();
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+      }
+
+      function saveCare() {
+        storage.set(STORE_CARE, JSON.stringify(care));
+      }
+
+      function loadCare() {
+        var raw = storage.get(STORE_CARE);
+        if (!raw) return;
+        var saved = null;
+        try {
+          saved = JSON.parse(raw);
+        } catch (err) {
+          saved = null;
+        }
+        if (!saved || typeof saved !== 'object') return;
+        for (var key in care) {
+          if (!Object.prototype.hasOwnProperty.call(care, key)) continue;
+          if (!Object.prototype.hasOwnProperty.call(saved, key)) continue;
+          var value = saved[key];
+          if (value === null || value === undefined) continue;
+          if (key === 'inventory' || key === 'toyCooldown') {
+            if (typeof value === 'object') care[key] = value;
+          } else if (key === 'toys') {
+            if (Object.prototype.toString.call(value) === '[object Array]') care[key] = value.slice(0, 32);
+          } else if (typeof value === 'number' && isFinite(value)) {
+            care[key] = value;
+          } else if (typeof value === 'string') {
+            care[key] = value;
+          }
+        }
+      }
+
+      function clampCare(value) {
+        return clamp(Number(value) || 0, 0, 100);
+      }
+
+      function applyDecay() {
+        var nowMs = Date.now();
+        var minutes = (nowMs - care.lastTick) / 60000;
+        if (!isFinite(minutes) || minutes <= 0) {
+          care.lastTick = nowMs;
+          return;
+        }
+        if (minutes > 720) minutes = 720;
+        care.hunger = clampCare(care.hunger - minutes / 5);
+        care.thirst = clampCare(care.thirst - minutes / 4);
+        care.happiness = clampCare(care.happiness - minutes / 12);
+        care.lastTick = nowMs;
+        saveCare();
+      }
+
+      function itemById(id) {
+        for (var i = 0; i < SHOP_ITEMS.length; i++) {
+          if (SHOP_ITEMS[i].id === id) return SHOP_ITEMS[i];
+        }
+        return null;
+      }
+
+      function gainXp(amount) {
+        var before = levelFromXp(care.xp);
+        care.xp = Math.max(0, Math.round(care.xp + Math.max(0, Number(amount) || 0)));
+        var after = levelFromXp(care.xp);
+        if (after > before) {
+          care.hunger = clampCare(care.hunger + 10);
+          care.thirst = clampCare(care.thirst + 10);
+          state.silent = 0;
+          replay('is-happy', 900);
+          spawnFx('✦', '#FDE68A');
+          showBubble(pickLine(CARE_LINES.level) + '（Lv.' + after + '）', 4400);
+        }
+        saveCare();
+      }
+
+      function addCoins(amount) {
+        care.coins = Math.max(0, Math.round(care.coins + (Number(amount) || 0)));
+        saveCare();
+      }
+
+      function signInReward() {
+        return 80 + 10 * (levelFromXp(care.xp) - 1);
+      }
+
+      function signInPending() {
+        return care.lastLogin !== todayKey();
+      }
+
+      function doSignIn() {
+        if (!signInPending()) return 0;
+        var reward = signInReward();
+        addCoins(reward);
+        care.xp += 20;
+        care.lastLogin = todayKey();
+        saveCare();
+        later(function () {
+          showBubble(pickLine(CARE_LINES.sign) + ' +' + reward + ' 金币', 3600);
+          spawnFx('🪙', '#FDE68A');
+        }, 2200);
+        return reward;
+      }
+
+      function maybeTaskPay() {
+        var key = todayKey();
+        if (care.todayKey !== key) {
+          care.todayKey = key;
+          care.todayEarn = 0;
+          care.lastTaskPay = Date.now();
+          saveCare();
+        }
+        if (care.todayEarn >= 240) return;
+        var minutes = (Date.now() - care.lastTaskPay) / 60000;
+        if (!isFinite(minutes) || minutes < 10) return;
+        var batches = Math.min(Math.floor(minutes / 10), Math.floor((240 - care.todayEarn) / 12));
+        if (batches <= 0) return;
+        care.coins += batches * 12;
+        care.todayEarn += batches * 12;
+        care.lastTaskPay = Date.now();
+        saveCare();
+        showBubble('跑任务津贴 +' + batches * 12 + ' 金币', 2800);
+        if (panelOpen) renderPanel();
+      }
+
+      function buyItem(id) {
+        var item = itemById(id);
+        if (!item) return;
+        if (care.coins < item.price) {
+          showBubble(pickLine(CARE_LINES.broke));
+          return;
+        }
+        care.coins -= item.price;
+        care.buyCount += 1;
+        if (item.kind === 'toy') {
+          if (care.toys.indexOf(id) < 0) care.toys.push(id);
+        } else {
+          care.inventory[id] = (care.inventory[id] || 0) + 1;
+        }
+        state.silent = 0;
+        showBubble('买好了：' + item.name);
+        spawnFx('🪙', '#FDE68A');
+        gainXp(5);
+        saveCare();
+        renderPanel();
+      }
+
+      function useItem(id) {
+        var item = itemById(id);
+        if (!item || !care.inventory[id]) return;
+        care.inventory[id] -= 1;
+        if (care.inventory[id] <= 0) delete care.inventory[id];
+        care.hunger = clampCare(care.hunger + (item.hunger || 0));
+        care.thirst = clampCare(care.thirst + (item.thirst || 0));
+        care.happiness = clampCare(care.happiness + (item.happy || 0));
+        care.feedCount += 1;
+        state.silent = 0;
+        replay('is-happy', 780);
+        spawnFx(item.kind === 'drink' ? '💧' : '♥', item.kind === 'drink' ? '#38BDF8' : '#FB7185');
+        showBubble(pickLine(item.kind === 'drink' ? CARE_LINES.drink : CARE_LINES.eat));
+        gainXp(item.xp || 2);
+        saveCare();
+        renderPanel();
+      }
+
+      function playToy(id) {
+        var item = itemById(id);
+        if (!item || care.toys.indexOf(id) < 0) return;
+        var nowMs = Date.now();
+        var until = care.toyCooldown[id] || 0;
+        if (nowMs < until) {
+          showBubble('刚玩过，等会儿再玩。');
+          return;
+        }
+        care.toyCooldown[id] = nowMs + (item.cooldownMin || 8) * 60000;
+        care.happiness = clampCare(care.happiness + (item.playHappy || 6));
+        care.playCount += 1;
+        state.silent = 0;
+        spin();
+        spawnFx('✦', '#C084FC');
+        showBubble(pickLine(CARE_LINES.play));
+        gainXp(item.playXp || 4);
+        saveCare();
+        renderPanel();
+      }
+
+      // ---------------- 面板 UI ----------------
+
+      function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      }
+
+      function clearNode(node) {
+        while (node.children.length > 0) node.removeChild(node.children[0]);
+      }
+
+      function makeBar(className, value) {
+        var track = el('div', 'pet-bar');
+        var fill = el('div', 'pet-bar-fill ' + className);
+        fill.style.width = Math.round(clampCare(value)) + '%';
+        track.appendChild(fill);
+        return track;
+      }
+
+      function makeRow(name, desc, metaText, buttonText, onButton, disabled) {
+        var row = el('div', 'pet-row');
+        var main = el('div', 'pet-row-main');
+        main.appendChild(el('div', 'pet-row-name', name));
+        if (desc) main.appendChild(el('div', 'pet-row-desc', desc));
+        row.appendChild(main);
+        if (metaText) row.appendChild(el('div', 'pet-row-meta', metaText));
+        if (buttonText) {
+          var btn = el('button', 'pet-btn-small', buttonText);
+          btn.setAttribute('type', 'button');
+          if (disabled) btn.setAttribute('disabled', 'disabled');
+          btn.addEventListener('click', function (event) {
+            if (event && event.stopPropagation) event.stopPropagation();
+            onButton();
+          });
+          row.appendChild(btn);
+        }
+        return row;
+      }
+
+      function renderStatus(body) {
+        var level = levelFromXp(care.xp);
+        var curXp = care.xp - xpForLevel(level);
+        var nextXp = xpForLevel(level + 1) - xpForLevel(level);
+
+        var levelLine = el('div', 'pet-level-line');
+        levelLine.appendChild(el('span', 'pet-level', 'Lv.' + level));
+        levelLine.appendChild(el('span', 'pet-xp-text', curXp + ' / ' + nextXp + ' XP'));
+        body.appendChild(levelLine);
+        body.appendChild(makeBar('is-xp', nextXp > 0 ? (curXp / nextXp) * 100 : 100));
+
+        var stats = [
+          { label: '饥饿度', value: care.hunger, cls: 'is-hunger' },
+          { label: '口渴度', value: care.thirst, cls: 'is-thirst' },
+          { label: '心情', value: care.happiness, cls: 'is-happy' },
+        ];
+        for (var i = 0; i < stats.length; i++) {
+          var stat = stats[i];
+          var row = el('div', 'pet-bar-row');
+          var label = el('div', 'pet-bar-label');
+          label.appendChild(el('span', '', stat.label));
+          label.appendChild(el('span', 'pet-bar-value', Math.round(stat.value) + ' / 100'));
+          row.appendChild(label);
+          row.appendChild(makeBar(stat.cls, stat.value));
+          body.appendChild(row);
+        }
+
+        body.appendChild(el('div', 'pet-panel-section', '背包'));
+        var usedBag = false;
+        for (var id in care.inventory) {
+          if (!Object.prototype.hasOwnProperty.call(care.inventory, id)) continue;
+          var item = itemById(id);
+          if (!item || !care.inventory[id]) continue;
+          usedBag = true;
+          (function (itemId, itemRef, count) {
+            var effects = [];
+            if (itemRef.hunger) effects.push('饱腹 +' + itemRef.hunger);
+            if (itemRef.thirst) effects.push('解渴 +' + itemRef.thirst);
+            if (itemRef.happy) effects.push('心情 +' + itemRef.happy);
+            body.appendChild(makeRow(
+              itemRef.name + ' ×' + count,
+              effects.join(' · '),
+              '',
+              itemRef.kind === 'drink' ? '喝掉' : '吃掉',
+              function () { useItem(itemId); }
+            ));
+          })(id, item, care.inventory[id]);
+        }
+        if (!usedBag) body.appendChild(el('div', 'pet-panel-hint', '背包是空的，去商店买点吃的。'));
+
+        body.appendChild(el('div', 'pet-panel-section', '每日'));
+        if (signInPending()) {
+          body.appendChild(makeRow('上线打卡', '今天还没签到', '+' + signInReward() + ' 金币', '签到', function () {
+            doSignIn();
+            renderPanel();
+          }));
+        } else {
+          body.appendChild(makeRow('今日已签到', '', '', '', null, false));
+        }
+        body.appendChild(el('div', 'pet-panel-hint', '在线跑任务：每 10 分钟 +12 金币（今日已赚 ' + care.todayEarn + ' / 240）。'));
+      }
+
+      function renderShop(body) {
+        var kinds = ['food', 'drink', 'toy'];
+        var titles = { food: '食物', drink: '饮品', toy: '玩具' };
+        for (var k = 0; k < kinds.length; k++) {
+          var kind = kinds[k];
+          body.appendChild(el('div', 'pet-panel-section', titles[kind]));
+          for (var i = 0; i < SHOP_ITEMS.length; i++) {
+            var item = SHOP_ITEMS[i];
+            if (item.kind !== kind) continue;
+            var owned = item.kind === 'toy' ? care.toys.indexOf(item.id) >= 0 : (care.inventory[item.id] || 0) > 0;
+            (function (itemRef, ownedFlag) {
+              var meta = itemRef.price + ' 金币';
+              body.appendChild(makeRow(itemRef.name, itemRef.desc, meta, ownedFlag ? '已拥有' : '购买', function () {
+                buyItem(itemRef.id);
+              }, care.coins < itemRef.price));
+            })(item, owned);
+          }
+        }
+      }
+
+      function renderToys(body) {
+        body.appendChild(el('div', 'pet-panel-section', '我的玩具'));
+        if (care.toys.length === 0) {
+          body.appendChild(el('div', 'pet-panel-hint', '还没有玩具，去商店看看（有掌机、主机和毛绒玩偶）。'));
+        }
+        for (var i = 0; i < care.toys.length; i++) {
+          var item = itemById(care.toys[i]);
+          if (!item) continue;
+          (function (itemRef) {
+            var remain = ((care.toyCooldown[itemRef.id] || 0) - Date.now()) / 60000;
+            var ready = remain > 0 ? Math.ceil(remain) + ' 分钟后可玩' : '可以玩';
+            body.appendChild(makeRow(itemRef.name, itemRef.desc, ready, '陪玩', function () {
+              playToy(itemRef.id);
+            }, remain > 0));
+          })(item);
+        }
+      }
+
+      function renderPanel() {
+        if (!panel || !panelBody) return;
+        if (panelCoins) panelCoins.textContent = '🪙 ' + care.coins;
+        for (var i = 0; i < panelTabButtons.length; i++) {
+          var info = panelTabButtons[i];
+          if (info.tab === panelTab) info.button.classList.add('is-active');
+          else info.button.classList.remove('is-active');
+        }
+        clearNode(panelBody);
+        if (panelTab === 'status') renderStatus(panelBody);
+        else if (panelTab === 'shop') renderShop(panelBody);
+        else renderToys(panelBody);
+      }
+
+      function switchTab(tab) {
+        panelTab = tab;
+        renderPanel();
+      }
+
+      function buildPanel() {
+        panel = el('div', 'dsh-clove-panel');
+        panel.setAttribute('data-plugin', 'dsh-pet-clove');
+        panel.style.display = 'none';
+
+        var head = el('div', 'pet-panel-head');
+        head.appendChild(el('span', 'pet-panel-title', '小暮蝶 · 日常'));
+        panelCoins = el('span', 'pet-panel-coins', '🪙 ' + care.coins);
+        head.appendChild(panelCoins);
+        var closeBtn = el('button', 'pet-panel-close', '✕');
+        closeBtn.setAttribute('type', 'button');
+        closeBtn.setAttribute('title', '关闭面板');
+        closeBtn.addEventListener('click', function () { togglePanel(false); });
+        head.appendChild(closeBtn);
+        panel.appendChild(head);
+
+        var tabs = el('div', 'pet-panel-tabs');
+        var tabDefs = [['status', '状态'], ['shop', '商店'], ['toys', '玩具']];
+        panelTabButtons = [];
+        for (var i = 0; i < tabDefs.length; i++) {
+          (function (tab, label) {
+            var btn = el('button', 'pet-panel-tab', label);
+            btn.setAttribute('type', 'button');
+            btn.addEventListener('click', function (event) {
+              if (event && event.stopPropagation) event.stopPropagation();
+              switchTab(tab);
+            });
+            tabs.appendChild(btn);
+            panelTabButtons.push({ tab: tab, button: btn });
+          })(tabDefs[i][0], tabDefs[i][1]);
+        }
+        panel.appendChild(tabs);
+
+        panelBody = el('div', 'pet-panel-body');
+        panel.appendChild(panelBody);
+
+        (document.body || document.documentElement).appendChild(panel);
+        renderPanel();
+      }
+
+      function togglePanel(force) {
+        if (!panel) return;
+        panelOpen = force !== undefined ? !!force : !panelOpen;
+        panel.style.display = panelOpen ? 'flex' : 'none';
+        if (panelOpen) renderPanel();
+      }
+
+      function careTick() {
+        applyDecay();
+        maybeTaskPay();
+        if (panelOpen) renderPanel();
+        careTimer = later(careTick, 60000);
+      }
+
       function scheduleIdle(delay) {
         if (idleTimer !== null) window.clearTimeout(idleTimer);
         idleTimer = window.setTimeout(idleTick, delay !== undefined ? delay : rand(2200, 5200));
@@ -561,6 +1153,11 @@ window.__ModuleLoader__.load({
           return;
         }
         var roll = Math.random();
+        if (care.hunger < 15 || care.thirst < 15) {
+          if (roll < 0.6) showBubble(pickLine(CARE_LINES.hungry), 3400);
+          scheduleIdle(rand(3500, 6500));
+          return;
+        }
         if (state.pinned) {
           // 固定模式：只在原地做小动作，绝不自己换位置
           if (roll < 0.3) {
@@ -737,6 +1334,11 @@ window.__ModuleLoader__.load({
       applyPos();
       applyFacing();
       syncPinButton();
+      loadCare();
+      applyDecay();
+      buildPanel();
+      if (signInPending()) doSignIn();
+      careTimer = later(careTick, 60000);
 
       function pointerOffset(event) {
         return { dx: (event.clientX || 0) - state.x, dy: (event.clientY || 0) - state.y };
@@ -836,6 +1438,11 @@ window.__ModuleLoader__.load({
         togglePin();
       }
 
+      function onPanelClick(event) {
+        if (event && event.stopPropagation) event.stopPropagation();
+        togglePanel();
+      }
+
       function onResize() {
         petW = host.offsetWidth || petW;
         petH = Math.round(petW * 1.02);
@@ -874,6 +1481,9 @@ window.__ModuleLoader__.load({
         showBubble(pickLine(LINES.walkAway), 1800);
       });
       pinBtn.addEventListener('click', onPinClick);
+      panelBtn.addEventListener('pointerenter', showHover);
+      panelBtn.addEventListener('pointerleave', hideHover);
+      panelBtn.addEventListener('click', onPanelClick);
       sleepBtn.addEventListener('click', function (event) {
         if (event && event.stopPropagation) event.stopPropagation();
         toggleSleep();
@@ -901,6 +1511,11 @@ window.__ModuleLoader__.load({
         if (bubbleTimer !== null) window.clearTimeout(bubbleTimer);
         if (zzzTimer !== null) window.clearTimeout(zzzTimer);
         if (introTimer !== null) window.clearTimeout(introTimer);
+        if (careTimer !== null) window.clearTimeout(careTimer);
+        if (panel) {
+          panel.remove();
+          panel = null;
+        }
         stopMotion();
         button.removeEventListener('pointerdown', onPointerDown);
         button.removeEventListener('click', onClick);
@@ -911,6 +1526,9 @@ window.__ModuleLoader__.load({
         pinBtn.removeEventListener('pointerenter', showHover);
         pinBtn.removeEventListener('pointerleave', hideHover);
         pinBtn.removeEventListener('click', onPinClick);
+        panelBtn.removeEventListener('pointerenter', showHover);
+        panelBtn.removeEventListener('pointerleave', hideHover);
+        panelBtn.removeEventListener('click', onPanelClick);
         window.removeEventListener('resize', onResize);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
@@ -923,7 +1541,7 @@ window.__ModuleLoader__.load({
       var style = document.createElement('style');
       style.id = 'dsh-clove-pet-css';
       style.setAttribute('data-plugin', 'dsh-pet-clove');
-      style.textContent = CSS;
+      style.textContent = ALL_CSS;
       (document.head || document.documentElement).appendChild(style);
       ctx.effect(function () { return function () { style.remove(); }; });
 
@@ -933,7 +1551,7 @@ window.__ModuleLoader__.load({
 
     exports.inject = [];
     exports.apply = apply;
-    exports._debug = { lines: LINES, css: CSS };
+    exports._debug = { lines: LINES, css: ALL_CSS, shop: SHOP_ITEMS, careLines: CARE_LINES, xpForLevel: xpForLevel, levelFromXp: levelFromXp };
     return module.exports;
   },
 });

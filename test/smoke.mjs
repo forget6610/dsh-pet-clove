@@ -85,6 +85,22 @@ const walk = (node, fn) => {
   node.children.forEach((child) => walk(child, fn));
 };
 
+const allNodes = (root) => {
+  const out = [];
+  walk(root, (n) => out.push(n));
+  return out;
+};
+
+const rowNamed = (root, name) => {
+  const rows = [];
+  walk(root, (n) => {
+    if (n.classList.contains('pet-row')) rows.push(n);
+  });
+  return rows.find((row) => allNodes(row).some((n) => n.classList.contains('pet-row-name') && n.textContent === name));
+};
+
+const buttonIn = (root, label) => allNodes(root).find((n) => n.classList.contains('pet-btn-small') && n.textContent === label);
+
 let nextTimer = 1;
 const timeouts = new Map();
 let rafSeq = 1;
@@ -160,6 +176,25 @@ globalThis.document = document;
 // pre-seed a save file: affinity 7, middle of the viewport
 store.set('dsh-clove-pet:affinity:v1', '7');
 store.set('dsh-clove-pet:pos:v2', '0.5,0.5');
+// pre-seed 20 minutes of neglect so the first tick has to decay stats
+store.set('dsh-clove-pet:care:v1', JSON.stringify({
+  coins: 1000,
+  xp: 0,
+  hunger: 40,
+  thirst: 40,
+  happiness: 50,
+  lastTick: Date.now() - 20 * 60 * 1000,
+  lastLogin: '',
+  todayEarn: 0,
+  todayKey: '',
+  lastTaskPay: Date.now(),
+  inventory: {},
+  toys: [],
+  toyCooldown: {},
+  feedCount: 0,
+  playCount: 0,
+  buyCount: 0,
+}));
 
 await import('../client.js');
 
@@ -198,7 +233,7 @@ const acts = nodes.filter((n) => n.classList.contains('pet-act'));
 const fx = nodes.find((n) => n.classList.contains('pet-fx'));
 assert.ok(img && bubble && glow && btn && fx, 'incomplete pet DOM');
 assert.equal(img.attrs['src'], '/dsh-clove-pet/pet.png', 'wrong pet image path');
-assert.equal(acts.length, 4, 'expected four hover buttons');
+assert.equal(acts.length, 5, 'expected five hover buttons');
 
 // position restored from storage, inside the viewport
 const petW = 120;
@@ -272,6 +307,80 @@ pinBtn.dispatch('click', { stopPropagation() {} });
 assert.equal(store.get('dsh-clove-pet:pinned:v1'), '0', 'unpin state not persisted');
 assert.ok(!pinBtn.classList.contains('is-active'), 'pin highlight not removed');
 
+// economy: daily sign-in and stat decay happen on load
+const d = new Date();
+const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+let careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+assert.equal(careSave.coins, 1080, 'daily sign-in reward missing');
+assert.ok(Math.abs(careSave.hunger - 36) < 0.2, 'hunger did not decay: ' + careSave.hunger);
+assert.ok(Math.abs(careSave.thirst - 35) < 0.2, 'thirst did not decay: ' + careSave.thirst);
+assert.equal(careSave.xp, 20, 'sign-in xp missing');
+assert.equal(careSave.lastLogin, today, 'lastLogin not recorded');
+
+// panel opens, renders bars and the coin balance
+const panelBtn = acts.find((n) => n.classList.contains('pet-act-panel'));
+assert.ok(panelBtn, 'missing panel button');
+assert.ok(plugin._debug.css.includes('.dsh-clove-panel'), 'panel CSS missing');
+const panel = document.querySelector('.dsh-clove-panel');
+assert.ok(panel, 'panel was not built');
+assert.equal(panel.style.display, 'none', 'panel should start hidden');
+panelBtn.dispatch('click', { stopPropagation() {} });
+assert.equal(panel.style.display, 'flex', 'panel did not open');
+let panelNodes = allNodes(panel);
+const coinsEl = panelNodes.find((n) => n.classList.contains('pet-panel-coins'));
+assert.ok(coinsEl && coinsEl.textContent.includes('1080'), 'coins not rendered');
+assert.equal(panelNodes.filter((n) => n.classList.contains('pet-bar-fill')).length, 4, 'stat bars missing');
+assert.deepEqual(
+  panelNodes.filter((n) => n.classList.contains('pet-bar-value')).map((n) => n.textContent),
+  ['36 / 100', '35 / 100', '48 / 100'],
+  'stat values wrong',
+);
+assert.ok(panelNodes.some((n) => n.textContent === '今日已签到'), 'sign-in state not rendered');
+
+// shop: buying spends coins and fills the bag
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
+const buyButtons = allNodes(panel).filter((n) => n.classList.contains('pet-btn-small') && n.textContent === '购买');
+assert.ok(buyButtons.length > 0, 'no buy buttons in shop');
+buyButtons[0].dispatch('click', { stopPropagation() {} });
+careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+assert.equal(careSave.coins, 1072, 'buying did not spend coins');
+assert.equal(careSave.inventory.candy, 1, 'bought food not in bag');
+
+// feeding raises hunger and xp
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '状态').dispatch('click', { stopPropagation() {} });
+const eatBtn = buttonIn(panel, '吃掉');
+assert.ok(eatBtn, 'feed button missing');
+eatBtn.dispatch('click', { stopPropagation() {} });
+careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+assert.equal(careSave.inventory.candy, undefined, 'eaten food not removed');
+assert.ok(Math.abs(careSave.hunger - 46) < 0.2, 'hunger not restored: ' + careSave.hunger);
+assert.equal(careSave.xp, 29, 'buy/feed xp missing: ' + careSave.xp);
+
+// toys: buy a handheld and play with it, cooldown blocks the second play
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
+const handheldRow = rowNamed(panel, '星光掌机');
+assert.ok(handheldRow, 'toy row missing');
+buttonIn(handheldRow, '购买').dispatch('click', { stopPropagation() {} });
+careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+assert.equal(careSave.coins, 812, 'toy price not charged');
+assert.ok(careSave.toys.indexOf('handheld') >= 0, 'toy not owned');
+assert.ok(careSave.happiness > 48, 'toy happiness bonus missing');
+
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '玩具').dispatch('click', { stopPropagation() {} });
+const playRow = rowNamed(panel, '星光掌机');
+assert.ok(playRow, 'owned toy row missing');
+buttonIn(playRow, '陪玩').dispatch('click', { stopPropagation() {} });
+careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+assert.ok(careSave.toyCooldown.handheld > Date.now(), 'toy cooldown not set');
+assert.ok(careSave.playCount >= 1, 'play count missing');
+const cooledRow = rowNamed(panel, '星光掌机');
+assert.equal(buttonIn(cooledRow, '陪玩').attrs['disabled'], 'disabled', 'cooldown button not disabled');
+
+// closing the panel
+panelNodes = allNodes(panel);
+panelNodes.find((n) => n.classList.contains('pet-panel-close')).dispatch('click', {});
+assert.equal(panel.style.display, 'none', 'panel did not close');
+
 // dragging follows the pointer, release glides with inertia
 btn.dispatch('pointerdown', {
   clientX: 640,
@@ -307,10 +416,11 @@ assert.ok(finalY >= margin && finalY <= maxY, 'pet drifted outside the viewport 
 // unmount leaves nothing behind
 disposers.forEach((fn) => fn());
 assert.equal(document.querySelector('.dsh-clove-pet'), null, 'pet DOM not removed');
+assert.equal(document.querySelector('.dsh-clove-panel'), null, 'panel DOM not removed');
 assert.ok(!document.head.children.some((el) => el.id === 'dsh-clove-pet-css'), 'style tag not removed');
 assert.equal(timeouts.size, 0, 'timers not cleared');
 assert.equal(rafs.size, 0, 'animation frames not cleared');
 assert.equal((windowListeners.get('resize') || []).length, 0, 'resize listener not removed');
 assert.equal((windowListeners.get('pointermove') || []).length, 0, 'pointermove listener leaked');
 
-console.log('smoke ok: mount / restore / petting / spin / sleep / fly / drag+inertia / cleanup');
+console.log('smoke ok: mount / restore / petting / spin / sleep / fly / pin / economy+shop / drag+inertia / cleanup');
