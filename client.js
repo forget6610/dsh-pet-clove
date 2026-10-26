@@ -227,7 +227,8 @@ window.__ModuleLoader__.load({
 .dsh-clove-pet .pet-actions {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 4px);
+  bottom: calc(100% - 10px);
+  padding: 0 0 18px;
   transform: translateX(-50%) translateY(6px);
   display: flex;
   gap: 7px;
@@ -508,8 +509,8 @@ window.__ModuleLoader__.load({
       var button = document.createElement('button');
       button.className = 'pet-btn';
       button.setAttribute('type', 'button');
-      button.setAttribute('title', '暮蝶桌宠：点我显示/隐藏按钮，拖我换位置');
-      button.setAttribute('aria-label', '暮蝶桌宠，点我显示或隐藏操作按钮');
+      button.setAttribute('title', '暮蝶桌宠：拖我、点我、双击我');
+      button.setAttribute('aria-label', '暮蝶桌宠，拖我或者点我');
 
       var body = document.createElement('div');
       body.className = 'pet-body';
@@ -557,7 +558,6 @@ window.__ModuleLoader__.load({
 
       var drag = null;
       var justDragged = false;
-      var actionsLocked = false;
       var idleTimer = null;
       var bubbleTimer = null;
       var zzzTimer = null;
@@ -1450,7 +1450,7 @@ window.__ModuleLoader__.load({
       function onClick(event) {
         if (justDragged) return;
         if (event && event.detail > 1) return;
-        toggleActions();
+        petMe();
       }
 
       function onDoubleClick(event) {
@@ -1468,14 +1468,7 @@ window.__ModuleLoader__.load({
       }
 
       function hideHover() {
-        if (actionsLocked) return;
-        later(function () { host.classList.remove('is-hover'); }, 260);
-      }
-
-      function toggleActions() {
-        actionsLocked = !actionsLocked;
-        if (actionsLocked) host.classList.add('is-hover');
-        else host.classList.remove('is-hover');
+        later(function () { host.classList.remove('is-hover'); }, 450);
       }
 
       function onPinClick(event) {
@@ -1503,6 +1496,8 @@ window.__ModuleLoader__.load({
       button.addEventListener('contextmenu', onContextMenu);
       button.addEventListener('pointerenter', showHover);
       button.addEventListener('pointerleave', hideHover);
+      actions.addEventListener('pointerenter', showHover);
+      actions.addEventListener('pointerleave', hideHover);
       heartBtn.addEventListener('pointerenter', showHover);
       flyBtn.addEventListener('pointerenter', showHover);
       pinBtn.addEventListener('pointerenter', showHover);
@@ -1568,6 +1563,8 @@ window.__ModuleLoader__.load({
         button.removeEventListener('contextmenu', onContextMenu);
         button.removeEventListener('pointerenter', showHover);
         button.removeEventListener('pointerleave', hideHover);
+        actions.removeEventListener('pointerenter', showHover);
+        actions.removeEventListener('pointerleave', hideHover);
         pinBtn.removeEventListener('pointerenter', showHover);
         pinBtn.removeEventListener('pointerleave', hideHover);
         pinBtn.removeEventListener('click', onPinClick);

@@ -247,24 +247,19 @@ assert.equal(pet.style.getPropertyValue('--pet-x'), String(margin + 0.5 * (maxX 
 assert.equal(pet.style.getPropertyValue('--pet-y'), String(margin + 0.5 * (maxY - margin)) + 'px', 'saved y not restored');
 assert.ok(timeouts.size > 0, 'intro/idle timers not scheduled');
 
-// clicking the pet toggles the action row instead of opening the panel
+// clicking the pet pets it (the panel is opened from its own button)
 btn.dispatch('click', { detail: 1 });
-assert.ok(pet.classList.contains('is-hover'), 'click did not reveal the action row');
-btn.dispatch('click', { detail: 1 });
-assert.ok(!pet.classList.contains('is-hover'), 'second click did not hide the action row');
-
-// panel opens from its button; petting goes through the panel quick action
-const panelToggleBtn = acts.find((n) => n.classList.contains('pet-act-panel'));
-panelToggleBtn.dispatch('click', { stopPropagation() {} });
-const earlyPanel = document.querySelector('.dsh-clove-panel');
-assert.ok(earlyPanel, 'panel was not built');
-assert.equal(earlyPanel.style.display, 'flex', 'panel button did not open the panel');
-const quickPet = buttonIn(earlyPanel, '摸摸');
-assert.ok(quickPet, 'panel quick action missing');
-quickPet.dispatch('click', {});
 assert.ok(bubble.classList.contains('is-visible'), 'no bubble after petting');
 assert.ok(bubble.textContent.length > 0, 'empty bubble');
 assert.ok(pet.classList.contains('is-happy'), 'no happy animation');
+
+// the action row stays visible while the pointer is over the row itself
+const actionsEl = nodes.find((n) => n.classList.contains('pet-actions'));
+assert.ok(actionsEl, 'missing action row');
+actionsEl.dispatch('pointerenter');
+assert.ok(pet.classList.contains('is-hover'), 'action row not shown on hover');
+actionsEl.dispatch('pointerleave');
+assert.ok(pet.classList.contains('is-hover'), 'action row hides too fast');
 assert.ok(fx.children.filter((n) => n.classList.contains('pet-fx-item')).length >= 3, 'no heart particles');
 assert.equal(store.get('dsh-clove-pet:affinity:v1'), '8', 'affinity not persisted');
 assert.match(bubble.style.getPropertyValue('--bubble-rot'), /deg$/, 'bubble has no tilt');
@@ -278,13 +273,9 @@ const lineCount =
   L.spin.length + L.walkAway.length + L.lateNight.length;
 assert.ok(lineCount >= 60, 'line pool too small: ' + lineCount);
 
-// keep petting past the affinity-10 milestone (panel is still open)
-for (let i = 0; i < 4; i++) {
-  buttonIn(document.querySelector('.dsh-clove-panel'), '摸摸').dispatch('click', {});
-}
+// keep petting past the affinity-10 milestone
+for (let i = 0; i < 4; i++) btn.dispatch('click', { detail: 1 });
 assert.equal(store.get('dsh-clove-pet:affinity:v1'), '12', 'affinity did not accumulate');
-allNodes(document.querySelector('.dsh-clove-panel')).find((n) => n.classList.contains('pet-panel-close')).dispatch('click', {});
-assert.equal(document.querySelector('.dsh-clove-panel').style.display, 'none', 'panel did not close');
 
 // double click spins
 btn.dispatch('dblclick', { preventDefault() {} });
