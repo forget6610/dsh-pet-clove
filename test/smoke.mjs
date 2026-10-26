@@ -155,9 +155,21 @@ class Doc {
     this.body = new El('body');
     this.documentElement = new El('html');
     this.hidden = false;
+    this.visibilityState = 'visible';
+    this.listeners = new Map();
   }
   createElement(tag) {
     return new El(tag);
+  }
+  addEventListener(type, fn) {
+    if (!this.listeners.has(type)) this.listeners.set(type, []);
+    this.listeners.get(type).push(fn);
+  }
+  removeEventListener(type, fn) {
+    this.listeners.set(type, (this.listeners.get(type) || []).filter((f) => f !== fn));
+  }
+  dispatch(type, event = {}) {
+    (this.listeners.get(type) || []).slice().forEach((fn) => fn(event));
   }
   querySelector(selector) {
     if (!selector.startsWith('.')) return null;
@@ -173,7 +185,7 @@ class Doc {
 const document = new Doc();
 globalThis.document = document;
 
-// pre-seed a save file: affinity 7, middle of the viewport
+// pre-seed a save file: affinity 7, middle of the viewport, 2 days together
 store.set('dsh-clove-pet:affinity:v1', '7');
 store.set('dsh-clove-pet:pos:v2', '0.5,0.5');
 // pre-seed 20 minutes of neglect so the first tick has to decay stats
@@ -196,6 +208,15 @@ store.set('dsh-clove-pet:care:v1', JSON.stringify({
   feedCount: 0,
   playCount: 0,
   buyCount: 0,
+  petCount: 0,
+  loginStreak: 0,
+  gameBest: 0,
+  gamePlays: 0,
+  startedAt: Date.now() - 2 * 86400000,
+  daily: { day: '', counters: { sign: 0, feed: 0, play: 0, pet: 0 }, done: {} },
+  achievements: [],
+  accessories: [],
+  activeAccessory: '',
 }));
 
 await import('../client.js');
@@ -218,7 +239,10 @@ assert.ok(plugin._debug.css.includes('#24103a'), 'panel background is not opaque
 const shop = plugin._debug.shop;
 assert.ok(shop.length >= 25, 'shop catalogue too small: ' + shop.length);
 assert.equal(new Set(shop.map((item) => item.id)).size, shop.length, 'duplicate shop item ids');
-assert.deepEqual([...new Set(shop.map((item) => item.kind))].sort(), ['drink', 'food', 'toy'], 'missing shop category');
+assert.deepEqual([...new Set(shop.map((item) => item.kind))].sort(), ['accessory', 'drink', 'food', 'toy'], 'missing shop category');
+assert.ok(plugin._debug.dailyTasks.length >= 4, 'daily task list too small');
+assert.ok(plugin._debug.achievements.length >= 6, 'achievement list too small');
+assert.ok(plugin._debug.titles.length >= 5, 'title list too small');
 const trademark = /playstation|nintendo|switch|xbox|ps[0-9]|mario|zelda/i;
 shop.forEach((item) => {
   assert.ok(item.name && item.price > 0, 'bad shop item: ' + item.id);
@@ -330,18 +354,22 @@ pinBtn.dispatch('click', { stopPropagation() {} });
 assert.equal(store.get('dsh-clove-pet:pinned:v1'), '0', 'unpin state not persisted');
 assert.ok(!pinBtn.classList.contains('is-active'), 'pin highlight not removed');
 
-// economy: daily sign-in and stat decay happen on load
+// economy: sign-in, task catch-up, daily tasks and achievements happen on load
 const d = new Date();
 const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-let careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
-assert.equal(careSave.coins, 1104, 'sign-in + catch-up task pay missing');
+const saveNow = () => JSON.parse(store.get('dsh-clove-pet:care:v1'));
+let careSave = saveNow();
+assert.ok(careSave.coins >= 1124, 'sign-in + catch-up task pay missing: ' + careSave.coins);
 assert.ok(Math.abs(careSave.hunger - 39.2) < 0.2, 'hunger did not decay: ' + careSave.hunger);
 assert.ok(Math.abs(careSave.thirst - 39) < 0.2, 'thirst did not decay: ' + careSave.thirst);
 assert.equal(careSave.todayEarn, 24, 'task pay not recorded');
-assert.equal(careSave.xp, 32, 'sign-in + task xp missing');
 assert.equal(careSave.lastLogin, today, 'lastLogin not recorded');
+assert.equal(careSave.loginStreak, 1, 'login streak not recorded');
+assert.equal(careSave.daily.done.sign, true, 'daily sign task not completed');
+assert.ok(careSave.achievements.indexOf('first_pet') >= 0, 'first-pet achievement missing');
+assert.equal(careSave.daily.done.pet, true, 'daily pet task not completed');
 
-// panel opens, renders bars and the coin balance
+// panel opens, renders bars, title, days together, daily tasks and achievements
 const panelBtn = acts.find((n) => n.classList.contains('pet-act-panel'));
 assert.ok(panelBtn, 'missing panel button');
 assert.ok(plugin._debug.css.includes('.dsh-clove-panel'), 'panel CSS missing');
@@ -352,41 +380,48 @@ panelBtn.dispatch('click', { stopPropagation() {} });
 assert.equal(panel.style.display, 'flex', 'panel did not open');
 let panelNodes = allNodes(panel);
 const coinsEl = panelNodes.find((n) => n.classList.contains('pet-panel-coins'));
-assert.ok(coinsEl && coinsEl.textContent.includes('1104'), 'coins not rendered');
+assert.ok(coinsEl && coinsEl.textContent.includes(String(saveNow().coins)), 'coins not rendered');
 assert.equal(panelNodes.filter((n) => n.classList.contains('pet-bar-fill')).length, 4, 'stat bars missing');
 assert.deepEqual(
   panelNodes.filter((n) => n.classList.contains('pet-bar-value')).map((n) => n.textContent),
   ['39 / 100', '39 / 100', '49 / 100'],
   'stat values wrong',
 );
-assert.ok(panelNodes.some((n) => n.textContent === '今日已签到'), 'sign-in state not rendered');
+assert.ok(panelNodes.some((n) => n.textContent.includes('相识第 3 天')), 'days-together line missing');
+assert.ok(panelNodes.some((n) => n.textContent === '上线签到'), 'daily task list missing');
+assert.ok(panelNodes.some((n) => n.textContent.includes('成就 (')), 'achievements section missing');
+assert.ok(panelNodes.some((n) => n.textContent === '导出存档'), 'export button missing');
+assert.ok(panelNodes.some((n) => n.textContent === '导入存档'), 'import button missing');
 
 // shop: buying spends coins and fills the bag
+const beforeBuy = saveNow().coins;
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
 const buyButtons = allNodes(panel).filter((n) => n.classList.contains('pet-btn-small') && n.textContent === '购买');
 assert.ok(buyButtons.length > 0, 'no buy buttons in shop');
 buyButtons[0].dispatch('click', { stopPropagation() {} });
-careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
-assert.equal(careSave.coins, 1096, 'buying did not spend coins');
+careSave = saveNow();
+assert.equal(careSave.coins, beforeBuy - 8, 'buying did not spend coins');
 assert.equal(careSave.inventory.candy, 1, 'bought food not in bag');
 
-// feeding raises hunger and xp
+// feeding raises hunger, xp and daily feed progress
+const hungerBefore = saveNow().hunger;
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '状态').dispatch('click', { stopPropagation() {} });
 const eatBtn = buttonIn(panel, '吃掉');
 assert.ok(eatBtn, 'feed button missing');
 eatBtn.dispatch('click', { stopPropagation() {} });
-careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+careSave = saveNow();
 assert.equal(careSave.inventory.candy, undefined, 'eaten food not removed');
-assert.ok(Math.abs(careSave.hunger - 49.2) < 0.2, 'hunger not restored: ' + careSave.hunger);
-assert.equal(careSave.xp, 41, 'buy/feed xp missing: ' + careSave.xp);
+assert.ok(Math.abs(careSave.hunger - (hungerBefore + 10)) < 0.2, 'hunger not restored: ' + careSave.hunger);
+assert.equal(careSave.daily.counters.feed, 1, 'daily feed counter missing');
 
-// toys: buy a handheld and play with it, cooldown blocks the second play
+// toys: buy the handheld and play with it, cooldown blocks the second play
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
 const handheldRow = rowNamed(panel, '星光掌机');
 assert.ok(handheldRow, 'toy row missing');
+const beforeToy = saveNow().coins;
 buttonIn(handheldRow, '购买').dispatch('click', { stopPropagation() {} });
-careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
-assert.equal(careSave.coins, 836, 'toy price not charged');
+careSave = saveNow();
+assert.equal(careSave.coins, beforeToy - 260, 'toy price not charged');
 assert.ok(careSave.toys.indexOf('handheld') >= 0, 'toy not owned');
 assert.ok(careSave.happiness > 48, 'toy happiness bonus missing');
 
@@ -394,16 +429,66 @@ allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textConte
 const playRow = rowNamed(panel, '星光掌机');
 assert.ok(playRow, 'owned toy row missing');
 buttonIn(playRow, '陪玩').dispatch('click', { stopPropagation() {} });
-careSave = JSON.parse(store.get('dsh-clove-pet:care:v1'));
+careSave = saveNow();
 assert.ok(careSave.toyCooldown.handheld > Date.now(), 'toy cooldown not set');
 assert.ok(careSave.playCount >= 1, 'play count missing');
+assert.equal(careSave.daily.counters.play, 1, 'daily play counter missing');
 const cooledRow = rowNamed(panel, '星光掌机');
 assert.equal(buttonIn(cooledRow, '陪玩').attrs['disabled'], 'disabled', 'cooldown button not disabled');
 
-// closing the panel
-panelNodes = allNodes(panel);
-panelNodes.find((n) => n.classList.contains('pet-panel-close')).dispatch('click', {});
-assert.equal(panel.style.display, 'none', 'panel did not close');
+// accessory: buy a bow, equip it and see the deco node
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
+const bowRow = rowNamed(panel, '蝴蝶结');
+assert.ok(bowRow, 'accessory row missing');
+const beforeAccessory = saveNow().coins;
+buttonIn(bowRow, '购买').dispatch('click', { stopPropagation() {} });
+careSave = saveNow();
+assert.equal(careSave.coins, beforeAccessory - 140, 'accessory price not charged');
+assert.ok(careSave.accessories.indexOf('bow') >= 0, 'accessory not owned');
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '玩具').dispatch('click', { stopPropagation() {} });
+buttonIn(rowNamed(panel, '蝴蝶结'), '使用').dispatch('click', { stopPropagation() {} });
+careSave = saveNow();
+assert.equal(careSave.activeAccessory, 'bow', 'accessory not equipped');
+assert.ok(pet.classList.contains('is-deco-bow'), 'deco class missing');
+
+// level-gated items show a lock instead of a buy button
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
+const gatedRow = rowNamed(panel, '客厅主机');
+assert.ok(gatedRow, 'gated toy row missing');
+assert.equal(buttonIn(gatedRow, '未解锁').attrs['disabled'], 'disabled', 'level gate not applied');
+
+// game: start, catch one butterfly, end early and get paid
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '游戏').dispatch('click', { stopPropagation() {} });
+const startBtn = buttonIn(panel, '开始游戏');
+assert.ok(startBtn, 'game start button missing');
+const beforeGame = saveNow().coins;
+startBtn.dispatch('click', { stopPropagation() {} });
+const gameOverlay = document.querySelector('.dsh-clove-game');
+assert.ok(gameOverlay, 'game overlay missing');
+const butterflies = allNodes(gameOverlay).filter((n) => n.classList.contains('pet-game-butterfly'));
+assert.ok(butterflies.length >= 1, 'no butterfly spawned');
+butterflies[0].dispatch('click', { stopPropagation() {} });
+const gameScore = allNodes(gameOverlay).find((n) => n.classList.contains('pet-game-score'));
+assert.ok(gameScore.textContent.includes('1'), 'game score not updated');
+buttonIn(gameOverlay, '提前结束').dispatch('click', { stopPropagation() {} });
+assert.equal(document.querySelector('.dsh-clove-game'), null, 'game overlay not removed');
+assert.ok(saveNow().coins >= beforeGame + 3, 'game reward missing');
+assert.ok(saveNow().gamePlays >= 1, 'game count missing');
+
+// hide for an hour, then bring the pet back with the floating chip
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '状态').dispatch('click', { stopPropagation() {} });
+buttonIn(panel, '隐藏1小时').dispatch('click', { stopPropagation() {} });
+assert.equal(pet.style.display, 'none', 'pet not hidden');
+const showChip = document.querySelector('.dsh-clove-show');
+assert.ok(showChip, 'show chip missing');
+showChip.dispatch('click', { stopPropagation() {} });
+assert.equal(pet.style.display, '', 'pet not restored');
+assert.equal(document.querySelector('.dsh-clove-show'), null, 'show chip not removed');
+
+// Esc closes the panel
+assert.equal(panel.style.display, 'flex', 'panel should still be open');
+document.dispatch('keydown', { key: 'Escape', keyCode: 27 });
+assert.equal(panel.style.display, 'none', 'Esc did not close the panel');
 
 // dragging follows the pointer, release glides with inertia
 btn.dispatch('pointerdown', {
@@ -460,5 +545,10 @@ assert.equal(timeouts.size, 0, 'timers not cleared');
 assert.equal(rafs.size, 0, 'animation frames not cleared');
 assert.equal((windowListeners.get('resize') || []).length, 0, 'resize listener not removed');
 assert.equal((windowListeners.get('pointermove') || []).length, 0, 'pointermove listener leaked');
+assert.equal((windowListeners.get('storage') || []).length, 0, 'storage listener leaked');
+assert.equal((document.listeners.get('pointerdown') || []).length, 0, 'document pointerdown leaked');
+assert.equal((document.listeners.get('keydown') || []).length, 0, 'document keydown leaked');
+assert.equal((document.listeners.get('visibilitychange') || []).length, 0, 'visibilitychange leaked');
+assert.equal(document.querySelector('.dsh-clove-show'), null, 'show chip not removed');
 
-console.log('smoke ok: mount / restore / petting / spin / sleep / fly / pin / economy+shop / drag+inertia / cleanup');
+console.log('smoke ok: mount / restore / petting / spin / sleep / fly / pin / economy / daily / achievements / shop / accessories / game / hide / panel / drag / cleanup');

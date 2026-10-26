@@ -1,6 +1,6 @@
 # dsh-pet-clove
 
-DeepSeek Harness Web GUI 的桌面宠物：一只会在屏幕里飞来飞去、能被拖着甩出去、摸头会冒爱心、还会自己睡觉的小家伙。它有自己的小日子：会饿、会渴、会升级，能靠跑任务赚钱买吃的和玩具。
+DeepSeek Harness Web GUI 的桌面宠物：一只会在屏幕里飞来飞去、能被拖着甩出去、摸头会冒爱心的小家伙。它也有自己的小日子——会饿会渴、要赚钱、要买东西、会升级、会记仇，也会记住你陪了它几天。
 
 仓库不带同人图，默认用 `assets/default/pet.png`（原创的蝴蝶小精灵）占位；换成自己的图见下面。
 
@@ -8,24 +8,28 @@ DeepSeek Harness Web GUI 的桌面宠物：一只会在屏幕里飞来飞去、�
 
 ## 会做什么
 
-- **按钮排**：鼠标放到小暮蝶身上、或移到头顶那排按钮上，按钮会一直显示不会消失，移开一会儿才淡出；面板从 📋 打开
-- **日常面板**：点 📋 打开，饥饿度 / 口渴度 / 心情 / 经验条 / 金币一眼看完，面板里也带快捷操作（摸摸 / 飞一下 / 固定 / 睡觉）
-- **赚钱**：每天上线自动打卡（+80 起，等级越高越多）；开着页面跑任务，每 10 分钟 +12 金币 **+6 经验**（金币每天上限 240，经验不封顶）
-- **商店**：食物 10 种、饮品 9 种、玩具 8 种（共 27 件），金币购买，买完进背包
-- **气泡防裁剪**：宠物飞到窗口顶部时，气泡会自动翻到脚下方，文字不会被切掉
-- **喂养**：状态页里点「吃掉 / 喝掉」，涨饱腹、解渴、加心情；饿了渴了它会自己抱怨
-- **玩具**：买的是原创命名的小玩意儿（星光掌机、客厅主机、毛绒蝴蝶、星云投影灯、烟雾拼图），玩具页可以「陪玩」，有冷却时间
-- **成长**：喂食、陪玩、签到、买东西都涨经验，升级会加饱腹上限并解锁新台词
-- **固定 / 自由**：悬停点 📌 把它钉在原地，再点恢复乱飞；固定状态会记住，刷新页面也不变
-- **自由飞行**：未固定时每隔几秒自己挑个位置飞过去，平滑移动带倾斜和拖尾星点；首次出现会从右边飞进来
-- **会自己安静**：没人理的时候飞动越来越少，最后自己睡着，不会一直满窗口跑
-- **拖动**：按住就能拖，松手带着惯性甩出去，碰到屏幕边缘会弹回来，最后自己停下
-- **摸头**：面板里点「摸摸」，它会跳起来冒爱心 + 随机台词，亲密度 +1
-- **双击**转一圈，**右键**睡觉/唤醒；睡着时慢慢呼吸冒 `Z`
-- **悬停**出现五个按钮：♥ 摸头、✦ 飞一下、📌 固定、📋 面板、☾ 睡觉（面板里也有同样的快捷操作）
-- **67 句台词**，按场景分池（问候/摸头/拖拽/独处/深夜…），连续两句不重复
-- 漫画尖角气泡，带蝴蝶翼角标，每句随机倾斜，贴屏幕边会自动挪回视口
-- 窄屏隐藏；`prefers-reduced-motion` 下关掉装饰动画，但宠物还是会动
+**陪伴**
+- 自由飞行、拖动惯性、摸头爱心、双击转圈、右键睡觉
+- 点一下小暮蝶摸头；鼠标放到宠物或按钮排上，按钮一直显示不消失
+- 点 📋 打开面板（面板可拖动，Esc / 点外面关）
+- 固定 📌、隐藏（1 小时 / 明天见，右下角有「显示暮蝶」小按钮找回）
+- 饿了渴了会抱怨；没人理会慢慢安静、最后睡着
+- 67 句台词，加等级解锁台词（Lv.3 / 5 / 8 各解锁两句）
+
+**养成**
+- 面板：等级 + 称号、经验条、饥饿度 / 口渴度 / 心情、金币、背包、每日任务、成就、存档
+- 每天上线自动签到，连续签到有额外奖励（连续天数越多越多，封顶 +30）
+- 在线跑任务：每 10 分钟 +12 金币 +6 经验（金币每天上限 240）
+- 每日任务 4 个：上线签到、喂食 2 次、陪玩 1 次、摸摸 5 下，完成给金币 + 经验
+- 成就 8 个，解锁有金币奖励；面板显示「相识第 N 天」
+- 商店 30 件：食物 / 饮品 / 玩具 / 装饰，部分商品按等级解锁（Lv.2 / 3 / 4）
+- 装饰：蝴蝶结、蝶翼光环、小皇冠，买完可以在「玩具」页装备
+- 小游戏「抓蝴蝶」：30 秒，每只 3 金币 + 2 经验，面板「游戏」页开
+
+**数据**
+- 数据存在 `localStorage`，可导出 / 导入 JSON 存档（换机器或清缓存前记得导）
+- 多开窗口时只有一个窗口负责计时发钱，其余窗口靠 storage 事件同步，不会重复领工资
+- 所有定时器/监听器都挂在插件 fiber 上，卸载即清理
 
 ## 安装
 
@@ -40,14 +44,30 @@ dsh web
 
 本地开发：clone 后 `dsh plugin --profile web add link:<路径>`。
 
-装完强刷页面，宠物出现后把鼠标移上去按钮排就稳定显示，点 📋 打开面板；拖动是按住宠物直接拖。
+装完强刷页面，宠物出现后把鼠标移上去按钮排就稳定显示，点 📋 打开面板。
 
-## 数值怎么算
+## 收益与数值
 
-- 饥饿度每 25 分钟 -1，口渴度每 20 分钟 -1，心情每 40 分钟 -1（离线也照算，最多补 12 小时；喂满一次大约能撑一天半以上）
-- 经验升级：Lv.2 需要 80 XP，往后每级递增；升级时饱腹和口渴各 +10
-- 金币：初始 120；每日签到 80 + 10×(等级-1)；在线任务津贴每 10 分钟 **+12 金币 +6 经验**，金币每天封顶 240
-- 所有数据存在 `localStorage`，键名以 `dsh-clove-pet:` 开头，清掉就重新养
+| 来源 | 金币 | 经验 |
+| --- | --- | --- |
+| 每日上线签到 | 80 + 10×(等级-1) + 连续签到加成 | +20 |
+| 在线跑任务（每 10 分钟） | +12（每天上限 240） | +6（不封顶） |
+| 每日任务（4 个） | 每个 20–25 | 每个 +10–15 |
+| 成就（8 个） | 每个 20–80 | +10–30 |
+| 抓蝴蝶小游戏 | 每只 +3 | 每只 +2 |
+| 喂食 / 喝水 | — | +4 ~ +30 |
+| 买玩具 / 装饰 | — | +5 |
+| 陪玩 | — | +4 ~ +10（有冷却） |
+
+- 饥饿度每 25 分钟 -1，口渴度每 20 分钟 -1，心情每 40 分钟 -1（离线也照算，最多补 12 小时）
+- 升级时饱腹和口渴各 +10，等级还给称号（初来乍到 → 烟雾新人 → 蝴蝶常客 → …）
+- 金币与经验都是纯本地数值，改存档文件就等于开挂，开心就好
+
+## 存档
+
+- 主要键：`dsh-clove-pet:care:v1`（养成数据）、`:pos:v2`（位置）、`:affinity:v1`（亲密度）、`:pinned:v1`（固定）、`:panel:v1`（面板位置）、`:hidden:v1`（隐藏到什么时候）
+- 面板「状态」页底部有「导出存档 / 导入存档」，导出文件叫 `clove-pet-save-日期.json`
+- 清浏览器数据前一定先导出一份
 
 ## 换角色图
 
@@ -61,14 +81,14 @@ dsh web
 - `FRICTION` 甩出后的阻尼（2.6，越大停得越快）
 - `BOUNCE` 碰边反弹系数（0.55）
 - 大小：CSS 变量 `--clove-pet-size`（默认 150px）
-- 台词/商品：`LINES`、`SHOP_ITEMS`
-- 存档键：`dsh-clove-pet:pos:v2`（位置）、`dsh-clove-pet:affinity:v1`（亲密度）、`dsh-clove-pet:pinned:v1`（固定）、`dsh-clove-pet:care:v1`（养成数据）
+- 台词 / 商品 / 任务 / 成就：`LINES`、`SHOP_ITEMS`、`DAILY_TASKS`、`ACHIEVEMENTS`
+- 等级曲线：`xpForLevel()`；称号：`TITLES`
 
 ## 结构
 
 ```
 host.js          # 宠物图路由（带默认图回退）
-client.js        # 飞行/固定/养成面板/商店/拖动/互动/粒子/台词
+client.js        # 飞行、养成面板、商店、小游戏、装饰、存档、多窗口同步
 assets/default/  # 占位素材（原创）
 test/            # 两个零依赖测试
 ```
@@ -80,7 +100,7 @@ npm test
 node test/host-smoke.mjs
 ```
 
-`npm test` 用手写 DOM stub 跑：挂载、读档、悬停按钮排保持显示、摸摸、双击、睡觉、飞行动画的 rAF 结束、固定开关、每日签到与数值衰减、面板渲染、买东西/喂食/买玩具/陪玩与冷却、拖动 + 惯性滑行、卸载清理；顺手校验生成的 CSS 不是坏的。
+`npm test` 用手写 DOM stub 跑：挂载、读档、悬停按钮排、摸摸、双击、睡觉、飞行 rAF、固定、签到与数值衰减、每日任务、成就、面板渲染、商店购买/喂食/买玩具/陪玩冷却、装饰装备、等级锁定、抓蝴蝶小游戏、隐藏与找回、Esc 关闭、拖动惯性、卸载清理与监听器泄漏检查。
 
 ## 许可
 
@@ -88,4 +108,4 @@ node test/host-smoke.mjs
 
 ---
 
-A small floating desktop pet for the DeepSeek Harness web GUI: it flies around on its own, can be pinned in place, dragged and thrown with inertia, gives hearts when petted, spins on double click, sleeps when ignored, and remembers where it was. It also has a little life: hunger, thirst, mood, XP, coins, a daily sign-in bonus, online "task" earnings, and a shop for food, drinks and toys. 67 lines of dialogue. Ships original placeholder art. MIT. Not affiliated with Riot Games.
+A small floating desktop pet for the DeepSeek Harness web GUI. It flies around on its own, can be pinned, dragged and thrown with inertia, petted, and will complain when hungry. It also grows: hunger, thirst, mood, XP, titles, coins, daily sign-in streaks, daily tasks, achievements, a 30-item shop (food, drinks, toys and accessories with original names), a butterfly-catching mini game, a hide-away mode, and JSON save export/import. Single-writer multi-window sync keeps income honest. 67 lines of dialogue. Ships original placeholder art. MIT. Not affiliated with Riot Games.
