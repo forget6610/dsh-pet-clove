@@ -1050,7 +1050,8 @@ window.__ModuleLoader__.load({
           care.inventory[id] = (care.inventory[id] || 0) + 1;
         }
         state.silent = 0;
-        showBubble('买好了：' + item.name);
+        var purchasedHint = item.kind === 'food' || item.kind === 'drink' ? '（已放进背包）' : '';
+        showBubble('买好了：' + item.name + purchasedHint);
         spawnFx('🪙', '#FDE68A');
         gainXp(5);
         saveCare();
@@ -1211,27 +1212,15 @@ window.__ModuleLoader__.load({
         body.appendChild(quick);
 
         body.appendChild(el('div', 'pet-panel-section', '背包'));
-        var usedBag = false;
-        for (var id in care.inventory) {
-          if (!Object.prototype.hasOwnProperty.call(care.inventory, id)) continue;
-          var item = itemById(id);
-          if (!item || !care.inventory[id]) continue;
-          usedBag = true;
-          (function (itemId, itemRef, count) {
-            var effects = [];
-            if (itemRef.hunger) effects.push('饱腹 +' + itemRef.hunger);
-            if (itemRef.thirst) effects.push('解渴 +' + itemRef.thirst);
-            if (itemRef.happy) effects.push('心情 +' + itemRef.happy);
-            body.appendChild(makeRow(
-              itemRef.name + ' ×' + count,
-              effects.join(' · '),
-              '',
-              itemRef.kind === 'drink' ? '喝掉' : '吃掉',
-              function () { useItem(itemId); }
-            ));
-          })(id, item, care.inventory[id]);
+        var bagTotal = 0;
+        for (var bagId in care.inventory) {
+          if (Object.prototype.hasOwnProperty.call(care.inventory, bagId)) bagTotal += Number(care.inventory[bagId]) || 0;
         }
-        if (!usedBag) body.appendChild(el('div', 'pet-panel-hint', '背包是空的，去商店买点吃的。'));
+        var bagRow = el('div', 'pet-quick-row');
+        bagRow.appendChild(quickAction('打开背包（' + bagTotal + ' 件）', function () {
+          switchTab('bag');
+        }));
+        body.appendChild(bagRow);
 
         body.appendChild(el('div', 'pet-panel-section', '每日任务'));
         if (signInPending()) {
@@ -1297,6 +1286,49 @@ window.__ModuleLoader__.load({
         }
       }
 
+      function renderBag(body) {
+        var entries = [];
+        var total = 0;
+        for (var id in care.inventory) {
+          if (!Object.prototype.hasOwnProperty.call(care.inventory, id)) continue;
+          var item = itemById(id);
+          if (!item || !care.inventory[id]) continue;
+          if (item.kind !== 'food' && item.kind !== 'drink') continue;
+          entries.push({ item: item, count: care.inventory[id] });
+          total += Number(care.inventory[id]) || 0;
+        }
+        entries.sort(function (a, b) {
+          if (a.item.kind !== b.item.kind) return a.item.kind === 'food' ? -1 : 1;
+          return a.item.price - b.item.price;
+        });
+        body.appendChild(el('div', 'pet-panel-section', '背包 (' + total + ' 件)'));
+
+        if (entries.length === 0) {
+          body.appendChild(el('div', 'pet-panel-hint', '背包空空如也。去商店买点吃的喝的，买完会自动放进来。'));
+          var emptyRow = el('div', 'pet-quick-row');
+          emptyRow.appendChild(quickAction('去商店', function () { switchTab('shop'); }));
+          body.appendChild(emptyRow);
+          return;
+        }
+
+        for (var i = 0; i < entries.length; i++) {
+          (function (entry) {
+            var effects = [];
+            if (entry.item.hunger) effects.push('饱腹 +' + entry.item.hunger);
+            if (entry.item.thirst) effects.push('解渴 +' + entry.item.thirst);
+            if (entry.item.happy) effects.push('心情 +' + entry.item.happy);
+            body.appendChild(makeRow(
+              entry.item.name + ' ×' + entry.count,
+              effects.join(' · ') || '买了就是图个开心',
+              '',
+              entry.item.kind === 'drink' ? '喝掉' : '吃掉',
+              function () { useItem(entry.item.id); }
+            ));
+          })(entries[i]);
+        }
+        body.appendChild(el('div', 'pet-panel-hint', '玩具和装饰不占背包，在「玩具」页陪玩和换装。'));
+      }
+
       function renderToys(body) {
         body.appendChild(el('div', 'pet-panel-section', '我的玩具'));
         if (care.toys.length === 0) {
@@ -1354,6 +1386,7 @@ window.__ModuleLoader__.load({
         }
         clearNode(panelBody);
         if (panelTab === 'status') renderStatus(panelBody);
+        else if (panelTab === 'bag') renderBag(panelBody);
         else if (panelTab === 'shop') renderShop(panelBody);
         else if (panelTab === 'toys') renderToys(panelBody);
         else renderGame(panelBody);
@@ -1386,7 +1419,7 @@ window.__ModuleLoader__.load({
         panel.appendChild(head);
 
         var tabs = el('div', 'pet-panel-tabs');
-        var tabDefs = [['status', '状态'], ['shop', '商店'], ['toys', '玩具'], ['game', '游戏']];
+        var tabDefs = [['status', '状态'], ['bag', '背包'], ['shop', '商店'], ['toys', '玩具'], ['game', '游戏']];
         panelTabButtons = [];
         for (var i = 0; i < tabDefs.length; i++) {
           (function (tab, label) {

@@ -387,6 +387,7 @@ let panelNodes = allNodes(panel);
 const coinsEl = panelNodes.find((n) => n.classList.contains('pet-panel-coins'));
 assert.ok(coinsEl && coinsEl.textContent.includes(String(saveNow().coins)), 'coins not rendered');
 assert.equal(panelNodes.filter((n) => n.classList.contains('pet-bar-fill')).length, 4, 'stat bars missing');
+assert.equal(panelNodes.filter((n) => n.classList.contains('pet-panel-tab')).length, 5, 'expected five panel tabs');
 assert.deepEqual(
   panelNodes.filter((n) => n.classList.contains('pet-bar-value')).map((n) => n.textContent),
   ['39 / 100', '39 / 100', '49 / 100'],
@@ -408,9 +409,12 @@ careSave = saveNow();
 assert.equal(careSave.coins, beforeBuy - 8, 'buying did not spend coins');
 assert.equal(careSave.inventory.candy, 1, 'bought food not in bag');
 
-// feeding raises hunger, xp and daily feed progress
+// the status page links to the bag, and feeding happens on the bag tab
 const hungerBefore = saveNow().hunger;
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '状态').dispatch('click', { stopPropagation() {} });
+assert.ok(allNodes(panel).some((n) => n.classList.contains('pet-btn-small') && n.textContent.includes('打开背包')), 'bag shortcut missing');
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '背包').dispatch('click', { stopPropagation() {} });
+assert.ok(rowNamed(panel, '蝴蝶糖 ×1'), 'bought candy not in bag');
 const eatBtn = buttonIn(panel, '吃掉');
 assert.ok(eatBtn, 'feed button missing');
 eatBtn.dispatch('click', { stopPropagation() {} });
@@ -418,6 +422,7 @@ careSave = saveNow();
 assert.equal(careSave.inventory.candy, undefined, 'eaten food not removed');
 assert.ok(Math.abs(careSave.hunger - (hungerBefore + 10)) < 0.2, 'hunger not restored: ' + careSave.hunger);
 assert.equal(careSave.daily.counters.feed, 1, 'daily feed counter missing');
+assert.ok(allNodes(panel).some((n) => n.textContent.includes('背包空空如也')), 'empty bag hint missing');
 
 // buying keeps the shop scroll position instead of jumping to the top
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
