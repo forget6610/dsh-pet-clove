@@ -115,10 +115,36 @@ window.__ModuleLoader__.load({
       { id: 'handheld', name: '星光掌机', kind: 'toy', price: 260, happy: 30, xp: 40, playHappy: 10, playXp: 8, cooldownMin: 10, desc: '便携的快乐，火车上也能玩。' },
       { id: 'console', name: '客厅主机', kind: 'toy', price: 420, minLevel: 4, happy: 45, xp: 70, playHappy: 12, playXp: 10, cooldownMin: 12, desc: '要接电视的那种，她说放烟雾里刚好。' },
       { id: 'arcade', name: '迷你街机', kind: 'toy', price: 320, minLevel: 3, happy: 36, xp: 52, playHappy: 11, playXp: 9, cooldownMin: 11, desc: '摇杆咔咔响，她说这声音很解压。' },
+      { id: 'headphones', name: '降噪耳机', kind: 'toy', price: 480, minLevel: 2, happy: 34, xp: 48, playHappy: 9, playXp: 7, cooldownMin: 9, desc: '戴上以后假装听不见你说话。' },
+      { id: 'display', name: '曲面显示器', kind: 'toy', price: 560, minLevel: 3, happy: 38, xp: 56, playHappy: 10, playXp: 8, cooldownMin: 10, desc: '她说打游戏视野更宽。' },
+      { id: 'terminal', name: '智能终端', kind: 'toy', price: 700, minLevel: 3, happy: 44, xp: 68, playHappy: 11, playXp: 9, cooldownMin: 11, desc: '能语音控制，但她懒得用。' },
+      { id: 'robot', name: '桌面机器人', kind: 'toy', price: 900, minLevel: 4, happy: 52, xp: 84, playHappy: 12, playXp: 10, cooldownMin: 12, desc: '会摇头晃脑，和它是同类。' },
+      { id: 'hologram', name: '全息投影屏', kind: 'toy', price: 1200, minLevel: 5, happy: 64, xp: 108, playHappy: 14, playXp: 12, cooldownMin: 14, desc: '把蝴蝶投到半空中，她说这才叫氛围。' },
+      { id: 'speaker', name: '浮空音响', kind: 'toy', price: 1500, minLevel: 5, happy: 72, xp: 126, playHappy: 15, playXp: 13, cooldownMin: 15, desc: '会浮在桌上放苏格兰小调。' },
+      { id: 'cinema', name: '私人影院套件', kind: 'toy', price: 1800, minLevel: 6, happy: 86, xp: 150, playHappy: 18, playXp: 15, cooldownMin: 18, desc: '关灯、放片、抱玩偶，一条龙。' },
+      { id: 'drone', name: '机械蝴蝶伴飞器', kind: 'toy', price: 2600, minLevel: 7, happy: 108, xp: 190, playHappy: 22, playXp: 18, cooldownMin: 22, desc: '会围着她飞，像多了一只蝴蝶。' },
       { id: 'bow', name: '蝴蝶结', kind: 'accessory', price: 140, happy: 6, xp: 18, desc: '随手别在头上，意外的合适。' },
       { id: 'halo', name: '蝶翼光环', kind: 'accessory', price: 160, happy: 8, xp: 20, desc: '一圈会转的淡紫色光。' },
+      { id: 'earring', name: '蝴蝶发卡', kind: 'accessory', price: 180, minLevel: 2, happy: 6, xp: 18, desc: '别在鬓角，低头的时候会晃。' },
       { id: 'crown', name: '小皇冠', kind: 'accessory', price: 220, minLevel: 2, happy: 10, xp: 25, desc: '永生者也想要个体面。' },
+      { id: 'scarf', name: '雪纺围巾', kind: 'accessory', price: 260, minLevel: 2, happy: 8, xp: 22, desc: '她说苏格兰的冬天用得上。' },
+      { id: 'monocle', name: '单片眼镜', kind: 'accessory', price: 300, minLevel: 3, happy: 9, xp: 26, desc: '装文化人用的，她自己说的。' },
+      { id: 'flame', name: '火焰光环', kind: 'accessory', price: 420, minLevel: 4, happy: 12, xp: 32, desc: '一圈烧不完的火，看着挺唬人。' },
+      { id: 'star', name: '星尘光环', kind: 'accessory', price: 480, minLevel: 4, happy: 14, xp: 36, desc: '几颗小星星会跟着她转。' },
+      { id: 'wings', name: '蝶翼光效', kind: 'accessory', price: 680, minLevel: 5, happy: 18, xp: 48, desc: '背后一对若隐若现的蝶翼。' },
     ];
+
+    var ACCESSORY_PARTS = {
+      bow: [{ glyph: '🎀', cls: 'pet-deco-bow' }],
+      halo: [{ glyph: '', cls: 'pet-deco-halo' }],
+      crown: [{ glyph: '👑', cls: 'pet-deco-crown' }],
+      earring: [{ glyph: '🦋', cls: 'pet-deco-earring' }],
+      scarf: [{ glyph: '🧣', cls: 'pet-deco-scarf' }],
+      monocle: [{ glyph: '🧐', cls: 'pet-deco-monocle' }],
+      flame: [{ glyph: '', cls: 'pet-deco-flame' }],
+      star: [{ glyph: '✨', cls: 'pet-deco-star-0' }, { glyph: '✦', cls: 'pet-deco-star-1' }],
+      wings: [{ glyph: '🦋', cls: 'pet-deco-wings-0' }, { glyph: '🦋', cls: 'pet-deco-wings-1' }],
+    };
 
     var CARE_LINES = {
       eat: ['谢谢，还凑合。', '就这？……好吧，谢谢。', '味道不错，再买一份。', '你居然记得我喜欢什么。', '蝴蝶也得吃饭的。'],
@@ -505,6 +531,25 @@ window.__ModuleLoader__.load({
   animation: pet-halo 9s linear infinite;
 }
 @keyframes pet-halo { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+.dsh-clove-pet .pet-deco-earring { right: 22%; top: 40%; transform: rotate(16deg); font-size: 20px; line-height: 1; }
+.dsh-clove-pet .pet-deco-scarf { left: 50%; top: 60%; transform: translateX(-50%); font-size: 26px; line-height: 1; }
+.dsh-clove-pet .pet-deco-monocle { left: 32%; top: 40%; transform: rotate(-6deg); font-size: 20px; line-height: 1; }
+.dsh-clove-pet .pet-deco-flame {
+  left: 50%;
+  top: 52%;
+  width: 118%;
+  height: 118%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(251, 146, 60, 0.85);
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.62), inset 0 0 14px rgba(251, 146, 60, 0.24);
+  animation: pet-halo 6s linear infinite;
+}
+.dsh-clove-pet .pet-deco-star-0 { left: 6%; top: 0%; font-size: 20px; line-height: 1; }
+.dsh-clove-pet .pet-deco-star-1 { right: 8%; top: 8%; font-size: 14px; line-height: 1; opacity: 0.9; }
+.dsh-clove-pet .pet-deco-wings-0 { left: -8%; top: 34%; font-size: 30px; line-height: 1; transform: rotate(-18deg); opacity: 0.95; }
+.dsh-clove-pet .pet-deco-wings-1 { right: -4%; top: 30%; font-size: 26px; line-height: 1; transform: rotate(20deg) scaleX(-1); opacity: 0.95; }
 
 .dsh-clove-show {
   position: fixed;
@@ -1300,6 +1345,7 @@ window.__ModuleLoader__.load({
 
       function renderPanel() {
         if (!panel || !panelBody) return;
+        var keepScroll = panelBody.scrollTop || 0;
         if (panelCoins) panelCoins.textContent = '🪙 ' + care.coins;
         for (var i = 0; i < panelTabButtons.length; i++) {
           var info = panelTabButtons[i];
@@ -1311,10 +1357,12 @@ window.__ModuleLoader__.load({
         else if (panelTab === 'shop') renderShop(panelBody);
         else if (panelTab === 'toys') renderToys(panelBody);
         else renderGame(panelBody);
+        panelBody.scrollTop = keepScroll;
       }
 
       function switchTab(tab) {
         panelTab = tab;
+        if (panelBody) panelBody.scrollTop = 0;
         renderPanel();
       }
 
@@ -1651,16 +1699,19 @@ window.__ModuleLoader__.load({
           if (decoNodes[i].parentNode) decoNodes[i].parentNode.removeChild(decoNodes[i]);
         }
         decoNodes = [];
-        host.classList.remove('is-deco-halo', 'is-deco-crown', 'is-deco-bow');
+        host.classList.remove('is-deco-halo', 'is-deco-crown', 'is-deco-bow', 'is-deco-earring', 'is-deco-scarf', 'is-deco-monocle', 'is-deco-flame', 'is-deco-star', 'is-deco-wings');
         var active = care.activeAccessory;
         if (!active) return;
+        var parts = ACCESSORY_PARTS[active];
+        if (!parts) return;
         host.classList.add('is-deco-' + active);
-        var node = document.createElement('span');
-        node.className = 'pet-deco pet-deco-' + active;
-        if (active === 'crown') node.textContent = '👑';
-        else if (active === 'bow') node.textContent = '🎀';
-        button.appendChild(node);
-        decoNodes.push(node);
+        for (var p = 0; p < parts.length; p++) {
+          var node = document.createElement('span');
+          node.className = 'pet-deco ' + parts[p].cls;
+          if (parts[p].glyph) node.textContent = parts[p].glyph;
+          button.appendChild(node);
+          decoNodes.push(node);
+        }
       }
 
       function useAccessory(id) {
@@ -2346,6 +2397,7 @@ window.__ModuleLoader__.load({
       dailyTasks: DAILY_TASKS,
       achievements: ACHIEVEMENTS,
       titles: TITLES,
+      accessoryParts: ACCESSORY_PARTS,
     };
     return module.exports;
   },

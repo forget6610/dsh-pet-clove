@@ -237,7 +237,12 @@ assert.ok(plugin._debug.css.includes('#24103a'), 'panel background is not opaque
 
 // the shop catalogue stays sensible and free of trademarked toy names
 const shop = plugin._debug.shop;
-assert.ok(shop.length >= 25, 'shop catalogue too small: ' + shop.length);
+assert.ok(shop.length >= 40, 'shop catalogue too small: ' + shop.length);
+assert.ok(shop.filter((item) => item.kind === 'toy').length >= 16, 'not enough toys');
+assert.ok(shop.filter((item) => item.kind === 'accessory').length >= 9, 'not enough accessories');
+assert.ok(shop.some((item) => item.kind === 'toy' && item.price >= 2000), 'no expensive electronic toy');
+const accessoryParts = plugin._debug.accessoryParts;
+assert.ok(accessoryParts && accessoryParts.wings.length === 2 && accessoryParts.star.length === 2, 'multi-part accessory missing');
 assert.equal(new Set(shop.map((item) => item.id)).size, shop.length, 'duplicate shop item ids');
 assert.deepEqual([...new Set(shop.map((item) => item.kind))].sort(), ['accessory', 'drink', 'food', 'toy'], 'missing shop category');
 assert.ok(plugin._debug.dailyTasks.length >= 4, 'daily task list too small');
@@ -413,6 +418,16 @@ careSave = saveNow();
 assert.equal(careSave.inventory.candy, undefined, 'eaten food not removed');
 assert.ok(Math.abs(careSave.hunger - (hungerBefore + 10)) < 0.2, 'hunger not restored: ' + careSave.hunger);
 assert.equal(careSave.daily.counters.feed, 1, 'daily feed counter missing');
+
+// buying keeps the shop scroll position instead of jumping to the top
+allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
+const shopScroll = allNodes(panel).find((n) => n.classList.contains('pet-panel-body'));
+shopScroll.scrollTop = 180;
+const chipsButton = allNodes(panel).filter((n) => n.classList.contains('pet-btn-small') && n.textContent === '购买')[1];
+const beforeChips = saveNow().coins;
+chipsButton.dispatch('click', { stopPropagation() {} });
+assert.equal(saveNow().coins, beforeChips - 14, 'second food purchase failed');
+assert.equal(shopScroll.scrollTop, 180, 'shop scroll jumped back to the top after buying');
 
 // toys: buy the handheld and play with it, cooldown blocks the second play
 allNodes(panel).find((n) => n.classList.contains('pet-panel-tab') && n.textContent === '商店').dispatch('click', { stopPropagation() {} });
